@@ -597,8 +597,8 @@
 
   /* Mystery squirrel cards */
   .squirrel-card.mystery img {
-    filter: brightness(0) saturate(0);
-    opacity: 0.3;
+    background: rgba(255,255,255,0.05);
+    object-fit: contain;
   }
   .squirrel-card.mystery .name {
     color: rgba(255,248,237,0.3);
@@ -1047,7 +1047,7 @@
       const isMystery = !revealedNames.has(s.name);
       return `
       <div class="squirrel-card${isMystery ? ' mystery' : ''}" data-rarity="${s.rarity}">
-        <img src="${s.image}" alt="${isMystery ? '???' : s.name}" loading="lazy">
+        <img src="${isMystery ? '' : s.image}" alt="${isMystery ? '???' : s.name}" loading="lazy">
         <div class="name">${isMystery ? '❓ ???' : s.emoji + ' ' + s.name}</div>
         <span class="rarity-badge">${s.rarity}</span>
         <div class="stats">
