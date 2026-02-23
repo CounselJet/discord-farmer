@@ -654,6 +654,22 @@ async def daily_cmd(ctx):
     await do_daily(ctx)
 
 
+@bot.command(name="donate")
+async def donate_cmd(ctx):
+    embed = discord.Embed(
+        title="💛 Support Squirrel Catcher",
+        description=(
+            "Thank you for playing Squirrel Catcher!\n\n"
+            "Donations help keep the bot running 24/7 and fund new features, "
+            "more squirrels, and server costs.\n\n"
+            "**[Donate on Ko-fi](https://ko-fi.com/squirrelcatcher)**"
+        ),
+        color=0xF1C40F,
+    )
+    embed.set_footer(text="Every acorn counts! 🌰")
+    await ctx.send(embed=embed)
+
+
 # ─── ERROR HANDLING ───────────────────────────────────────────────────────────
 
 @bot.event
