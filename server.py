@@ -12,6 +12,7 @@ async def index(_request):
 
 app = web.Application()
 app.router.add_get("/", index)
+app.router.add_static("/", ".", show_index=False)
 
 if __name__ == "__main__":
     web.run_app(app, port=PORT)
