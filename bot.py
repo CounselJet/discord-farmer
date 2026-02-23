@@ -1194,7 +1194,7 @@ async def do_exchange_info(ctx_or_interaction):
             "• 100 🌰 Acorns → 1 🥈🌰 Silver Acorn\n"
             "• 10 🥈🌰 Silver Acorns → 1 💚🌰 Emerald Acorn\n"
             "• 10 💚🌰 Emerald Acorns → 1 ✨🌰 Golden Acorn\n\n"
-            f"Use `{PREFIX}exchange <amount>` to convert."
+            f"Use `{PREFIX} exchange <amount>` to convert."
         ),
         color=0x3498DB,
     )
@@ -1208,18 +1208,18 @@ async def do_help(ctx_or_interaction):
         color=0x8B4513,
     )
     cmds = [
-        (f"`{PREFIX}catch`", "Set a trap and try to catch a squirrel!"),
-        (f"`{PREFIX}bag`", "View your caught squirrels"),
-        (f"`{PREFIX}balance`", "Check your acorn stash"),
-        (f"`{PREFIX}profile`", "View your full profile"),
-        (f"`{PREFIX}shop`", "Browse items and upgrades"),
-        (f"`{PREFIX}buy <item>`", "Purchase an item or upgrade"),
-        (f"`{PREFIX}buffs`", "View your active buffs and upgrades"),
-        (f"`{PREFIX}exchange <amount>`", "Convert 100 acorns → 1 silver acorn, etc."),
-        (f"`{PREFIX}leaderboard`", "See the top squirrel catchers"),
-        (f"`{PREFIX}bestiary`", "View all discoverable squirrels"),
-        (f"`{PREFIX}sell <squirrel name>`", "Sell a squirrel from your bag"),
-        (f"`{PREFIX}daily`", "Claim your daily acorn bonus"),
+        (f"`{PREFIX} catch`", "Set a trap and try to catch a squirrel!"),
+        (f"`{PREFIX} bag`", "View your caught squirrels"),
+        (f"`{PREFIX} balance`", "Check your acorn stash"),
+        (f"`{PREFIX} profile`", "View your full profile"),
+        (f"`{PREFIX} shop`", "Browse items and upgrades"),
+        (f"`{PREFIX} buy <item>`", "Purchase an item or upgrade"),
+        (f"`{PREFIX} buffs`", "View your active buffs and upgrades"),
+        (f"`{PREFIX} exchange <amount>`", "Convert 100 acorns → 1 silver acorn, etc."),
+        (f"`{PREFIX} leaderboard`", "See the top squirrel catchers"),
+        (f"`{PREFIX} bestiary`", "View all discoverable squirrels"),
+        (f"`{PREFIX} sell <squirrel name>`", "Sell a squirrel from your bag"),
+        (f"`{PREFIX} daily`", "Claim your daily acorn bonus"),
     ]
     for name, desc in cmds:
         embed.add_field(name=name, value=desc, inline=False)
@@ -1553,7 +1553,7 @@ async def on_ready():
     print(f"   Prefix: {PREFIX}")
     print(f"   Servers: {len(bot.guilds)}")
     print(f"   Database: connected")
-    await bot.change_presence(activity=discord.Game(name=f"{PREFIX}help | 🐿️"))
+    await bot.change_presence(activity=discord.Game(name=f"{PREFIX} help | 🐿️"))
 
 
 @bot.event
@@ -1591,7 +1591,7 @@ async def on_guild_join(guild: discord.Guild):
         ),
         inline=False,
     )
-    embed.set_footer(text=f"Type {PREFIX}help for all commands")
+    embed.set_footer(text=f"Type {PREFIX} help for all commands")
     await channel.send(embed=embed, view=MenuView())
 
 # ─── COMMANDS ─────────────────────────────────────────────────────────────────
@@ -1630,7 +1630,7 @@ async def exchange_cmd(ctx, amount: int = 0):
             "• 100 🌰 Acorns → 1 🥈🌰 Silver Acorn\n"
             "• 10 🥈🌰 Silver Acorns → 1 💚🌰 Emerald Acorn\n"
             "• 10 💚🌰 Emerald Acorns → 1 ✨🌰 Golden Acorn\n\n"
-            f"Usage: `{PREFIX}exchange <acorns to convert>`"
+            f"Usage: `{PREFIX} exchange <acorns to convert>`"
         )
         return
 
@@ -1660,7 +1660,7 @@ async def exchange_silver_cmd(ctx, amount: int = 0):
     player = await db.get_player(user_id)
 
     if amount <= 0:
-        await ctx.send(f"Usage: `{PREFIX}exchange_silver <amount>` (10 🥈🌰 = 1 💚🌰)")
+        await ctx.send(f"Usage: `{PREFIX} exchange_silver <amount>` (10 🥈🌰 = 1 💚🌰)")
         return
     if player["silver_acorns"] < amount:
         await ctx.send(f"❌ You only have **{player['silver_acorns']:,}** 🥈🌰!")
@@ -1685,7 +1685,7 @@ async def exchange_emerald_cmd(ctx, amount: int = 0):
     player = await db.get_player(user_id)
 
     if amount <= 0:
-        await ctx.send(f"Usage: `{PREFIX}exchange_emerald <amount>` (10 💚🌰 = 1 ✨🌰)")
+        await ctx.send(f"Usage: `{PREFIX} exchange_emerald <amount>` (10 💚🌰 = 1 ✨🌰)")
         return
     if player["emerald_acorns"] < amount:
         await ctx.send(f"❌ You only have **{player['emerald_acorns']:,}** 💚🌰!")
@@ -1717,7 +1717,7 @@ async def bestiary_cmd(ctx):
 @bot.command(name="sell")
 async def sell_cmd(ctx, *, squirrel_name: str = ""):
     if not squirrel_name:
-        await ctx.send(f"Usage: `{PREFIX}sell <squirrel name>` — Sell one squirrel for acorns.")
+        await ctx.send(f"Usage: `{PREFIX} sell <squirrel name>` — Sell one squirrel for acorns.")
         return
 
     user_id = str(ctx.author.id)
@@ -1731,7 +1731,7 @@ async def sell_cmd(ctx, *, squirrel_name: str = ""):
             break
 
     if not match:
-        await ctx.send(f"❌ Unknown squirrel: **{squirrel_name}**. Check `{PREFIX}bestiary` for names.")
+        await ctx.send(f"❌ Unknown squirrel: **{squirrel_name}**. Check `{PREFIX} bestiary` for names.")
         return
 
     sq_name = match[0]
@@ -1771,7 +1771,7 @@ async def shop_cmd(ctx):
 @bot.command(name="buy")
 async def buy_cmd(ctx, *, item_name: str = ""):
     if not item_name:
-        await ctx.send(f"Usage: `{PREFIX}buy <item>` — Use `{PREFIX}shop` to see items.")
+        await ctx.send(f"Usage: `{PREFIX} buy <item>` — Use `{PREFIX} shop` to see items.")
         return
     await do_buy(ctx, item_name.lower().replace(" ", "_"))
 
@@ -1804,7 +1804,7 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return  # Silently ignore
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"❌ Missing argument! Try `{PREFIX}help` for usage info.")
+        await ctx.send(f"❌ Missing argument! Try `{PREFIX} help` for usage info.")
     else:
         print(f"Error: {error}")
         await ctx.send("❌ Something went wrong! Try again.")
