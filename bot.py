@@ -818,45 +818,21 @@ async def do_catch(ctx_or_interaction):
     acorn_multiplier = 1
     has_silver_shimmer = False
     has_treasure_map = False
-    charge_buff_ids = []  # (buff_id, buff_type) for charge-based buffs to consume
+    charge_buff_ids = []  # buff IDs for charge-based buffs to consume
+
+    # Bait effect lookup: buff_type -> (cost_value, effect_applicator)
+    # cost_value is used to rank baits; we convert all costs to base acorns
+    _bait_keys = set(_SHOP_CATEGORIES["bait"]["keys"])
+    bait_buffs = []  # (cost_in_acorns, buff) for ranking
 
     for buff in active_buffs:
         bt = buff["buff_type"]
         bid = buff["id"]
-        if bt == "peanut_butter_trap":
-            bait_junk_reduction = max(bait_junk_reduction, 3)
-            charge_buff_ids.append(bid)
-        elif bt == "squirrel_bait":
-            bait_junk_reduction = max(bait_junk_reduction, 5)
-            charge_buff_ids.append(bid)
-        elif bt == "premium_nuts":
-            bait_junk_reduction = max(bait_junk_reduction, 8)
-            charge_buff_ids.append(bid)
-        elif bt == "golden_bait":
-            bait_junk_reduction = max(bait_junk_reduction, 10)
-            charge_buff_ids.append(bid)
-        elif bt == "honey_trap":
-            bait_junk_reduction = max(bait_junk_reduction, 15)
-            charge_buff_ids.append(bid)
-        elif bt == "perfect_bait":
-            bait_junk_reduction = 100
-            charge_buff_ids.append(bid)
-        elif bt == "shiny_acorn_bait":
-            rare_bonus = max(rare_bonus, 25)
-            charge_buff_ids.append(bid)
-        elif bt == "rainbow_bait":
-            rare_bonus = max(rare_bonus, 30)
-            bait_junk_reduction = max(bait_junk_reduction, 5)
-            charge_buff_ids.append(bid)
-        elif bt == "rare_scent":
-            rare_bonus = max(rare_bonus, 50)
-            charge_buff_ids.append(bid)
-        elif bt == "exotic_nectar":
-            epic_bonus = max(epic_bonus, 50)
-            charge_buff_ids.append(bid)
-        elif bt == "mythic_truffle":
-            mythic_bonus = max(mythic_bonus, 200)
-            charge_buff_ids.append(bid)
+        if bt in _bait_keys:
+            # Rank by cost converted to base acorns for comparison
+            item = SHOP_ITEMS[bt]
+            cost_acorns = item["cost"] * EXCHANGE_RATES.get(item["currency"], 1)
+            bait_buffs.append((cost_acorns, buff))
         elif bt == "lucky_acorn":
             acorn_multiplier = max(acorn_multiplier, 2)
         elif bt == "scholars_cap":
@@ -871,6 +847,32 @@ async def do_catch(ctx_or_interaction):
             charge_buff_ids.append(bid)
         elif bt == "treasure_map":
             has_treasure_map = True
+
+    # Pick the single most expensive bait and apply its effects
+    if bait_buffs:
+        bait_buffs.sort(key=lambda x: x[0], reverse=True)
+        _, best_bait = bait_buffs[0]
+        best_bt = best_bait["buff_type"]
+        charge_buff_ids.append(best_bait["id"])
+
+        _BAIT_EFFECTS = {
+            "peanut_butter_trap": {"junk": 3},
+            "squirrel_bait":     {"junk": 5},
+            "premium_nuts":      {"junk": 8},
+            "golden_bait":       {"junk": 10},
+            "honey_trap":        {"junk": 15},
+            "perfect_bait":      {"junk": 100},
+            "shiny_acorn_bait":  {"rare": 25},
+            "rainbow_bait":      {"rare": 30, "junk": 5},
+            "rare_scent":        {"rare": 50},
+            "exotic_nectar":     {"epic": 50},
+            "mythic_truffle":    {"mythic": 200},
+        }
+        effects = _BAIT_EFFECTS.get(best_bt, {})
+        bait_junk_reduction = effects.get("junk", 0)
+        rare_bonus = effects.get("rare", 0)
+        epic_bonus = effects.get("epic", 0)
+        mythic_bonus = effects.get("mythic", 0)
 
     # Suspense message
     if is_interaction:
@@ -1030,7 +1032,8 @@ async def do_balance(ctx_or_interaction):
 async def do_profile(ctx_or_interaction):
     is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
     user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
-    player = await db.get_player(str(user.id))
+    user_id = str(user.id)
+    player = await db.get_player(user_id)
     xp_needed = xp_for_level(player["level"])
 
     embed = discord.Embed(title=f"🐿️ {user.display_name}'s Profile", color=0x8B4513)
@@ -1040,6 +1043,60 @@ async def do_profile(ctx_or_interaction):
     embed.add_field(name="Junk Catches", value=f"🗑️ {player['junk_catches']}", inline=True)
     bal_lines = [f"{e} {player.get(c, 0):,}" for c, e in CURRENCIES.items()]
     embed.add_field(name="Acorn Stash", value=" | ".join(bal_lines), inline=False)
+
+    # Active bait
+    active_buffs = await db.get_active_buffs(user_id)
+    bait_keys = set(_SHOP_CATEGORIES["bait"]["keys"])
+    bait_buffs = []
+    for buff in active_buffs:
+        if buff["buff_type"] in bait_keys:
+            item = SHOP_ITEMS[buff["buff_type"]]
+            cost_acorns = item["cost"] * EXCHANGE_RATES.get(item["currency"], 1)
+            bait_buffs.append((cost_acorns, buff))
+    if bait_buffs:
+        bait_buffs.sort(key=lambda x: x[0], reverse=True)
+        _, best = bait_buffs[0]
+        best_item = SHOP_ITEMS[best["buff_type"]]
+        charges = best.get("charges_left")
+        bait_str = f"{best_item['emoji']} **{best_item['name']}**"
+        if charges is not None:
+            bait_str += f" — {charges} charges"
+        embed.add_field(name="Active Bait", value=bait_str, inline=False)
+    else:
+        embed.add_field(name="Active Bait", value="None", inline=False)
+
+    # Active buffs (non-bait)
+    buff_lines = []
+    for buff in active_buffs:
+        bt = buff["buff_type"]
+        if bt in bait_keys:
+            continue
+        item = SHOP_ITEMS.get(bt)
+        if not item:
+            continue
+        if buff["charges_left"] is not None:
+            buff_lines.append(f"{item['emoji']} **{item['name']}** — {buff['charges_left']} charges")
+        elif buff["expires_at"]:
+            remaining = buff["expires_at"] - datetime.now(timezone.utc)
+            if remaining.total_seconds() > 0:
+                mins = int(remaining.total_seconds() // 60)
+                hrs = mins // 60
+                mins = mins % 60
+                time_str = f"{hrs}h {mins}m" if hrs > 0 else f"{mins}m"
+                buff_lines.append(f"{item['emoji']} **{item['name']}** — {time_str}")
+    embed.add_field(name="Active Buffs", value="\n".join(buff_lines) if buff_lines else "None", inline=False)
+
+    # Permanent upgrades
+    upgrade_lines = []
+    for key, upgrade in UPGRADE_TIERS.items():
+        current = player.get(key, 0)
+        if current > 0:
+            label = upgrade["tiers"][current - 1]["label"]
+            upgrade_lines.append(f"🪤 **{upgrade['name']}** Tier {current}: {label}")
+        else:
+            upgrade_lines.append(f"🪤 **{upgrade['name']}** — Not purchased")
+    embed.add_field(name="Permanent Upgrades", value="\n".join(upgrade_lines), inline=False)
+
     unique = len(player.get("catches", {}))
     embed.add_field(name="Bestiary", value=f"📖 {unique}/{len(SQUIRRELS)} species discovered", inline=False)
     await _send(ctx_or_interaction, embed)
