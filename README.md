@@ -1,58 +1,37 @@
-# 🐿️ Squirrel Catcher Bot
+# Squirrel Catcher
 
-A Discord bot where you catch squirrels, collect acorns, and compete with friends!
+A Discord bot game where you catch squirrels, earn acorns, level up, and compete with friends.
 
-## Quick Setup (5 minutes)
+[Add to your server](https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147485696&scope=bot%20applications.commands)
 
-### 1. Create a Discord Bot
+## Features
 
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click **New Application** → name it "Squirrel Catcher"
-3. Go to **Bot** tab → click **Add Bot**
-4. Turn ON **Message Content Intent** (under Privileged Gateway Intents)
-5. Click **Reset Token** → copy your bot token
-
-### 2. Invite to Your Server
-
-1. Go to **OAuth2 → URL Generator**
-2. Check scopes: `bot`, `applications.commands`
-3. Check permissions: `Send Messages`, `Embed Links`, `Read Message History`
-4. Copy the URL → open in browser → add to your server
-
-### 3. Run the Bot
-
-```bash
-# Install dependency
-pip install discord.py
-
-# Set your token (Linux/Mac)
-export DISCORD_BOT_TOKEN="your-token-here"
-
-# Or on Windows
-set DISCORD_BOT_TOKEN=your-token-here
-
-# Run it!
-python bot.py
-```
-
-Or just edit `bot.py` line 14 and paste your token directly (don't share the file after!).
+- **14 squirrel species** across 6 rarities (Common to Mythic)
+- **Leveling system** — gain XP from catches, unlock better drop rates at higher levels
+- **Multi-tier currency** — Acorns, Silver Acorns, Emerald Acorns, Golden Acorns
+- **Bestiary** — track discoveries of all species
+- **Leaderboard** — compete with friends
+- **Daily bonus** — scales with your level
+- **Persistent data** — PostgreSQL database
 
 ## Commands
 
-| Command | What it does |
-|---------|-------------|
-| `!sq catch` | Set a trap and catch a squirrel (or junk) |
-| `!sq bag` | View your caught squirrels |
-| `!sq balance` | Check your acorn currencies |
-| `!sq profile` | Full player profile |
-| `!sq exchange <amount>` | Convert 100 acorns → 1 silver acorn |
-| `!sq exchange_silver <amount>` | Convert 10 silver → 1 emerald |
-| `!sq exchange_emerald <amount>` | Convert 10 emerald → 1 golden |
-| `!sq sell <squirrel name>` | Sell a squirrel for acorns |
-| `!sq daily` | Claim daily acorn bonus |
-| `!sq leaderboard` | Top catchers |
-| `!sq bestiary` | All squirrel species + discovery status |
-| `!sq help` | Show all commands |
+All commands use the `!sq` prefix.
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `!sq catch` | | Set a trap and catch a squirrel (or junk) |
+| `!sq bag` | `inv`, `inventory` | View your caught squirrels |
+| `!sq balance` | `bal` | Check your acorn balances |
+| `!sq profile` | | Full player stats |
+| `!sq exchange <amount>` | `ex` | Convert 100 acorns → 1 silver acorn |
+| `!sq exchange_silver <amount>` | `exs` | Convert 10 silver → 1 emerald acorn |
+| `!sq exchange_emerald <amount>` | `exe` | Convert 10 emerald → 1 golden acorn |
+| `!sq sell <squirrel name>` | | Sell a squirrel for acorns |
+| `!sq daily` | | Claim daily acorn bonus |
+| `!sq leaderboard` | `lb`, `top` | Top catchers |
+| `!sq bestiary` | `dex` | All squirrel species + discovery status |
+| `!sq help` | | Show all commands |
 
 ## Squirrel Rarities
 
@@ -65,27 +44,103 @@ Or just edit `bot.py` line 14 and paste your token directly (don't share the fil
 | 🟡 Legendary | Golden Squirrel, Cosmic Squirrel | ~0.5% |
 | 🔴 Mythic | Mythic Nutcracker | ~0.1% |
 
+Higher levels improve your chances of catching rare squirrels.
+
 ## Currency
 
-- 🌰 **Acorns** — base currency
-- 🥈🌰 **Silver Acorns** — 100 acorns each
-- 💚🌰 **Emerald Acorns** — 1,000 acorns each
-- ✨🌰 **Golden Acorns** — 10,000 acorns each
+| Currency | Value |
+|----------|-------|
+| 🌰 Acorns | Base currency |
+| 🥈🌰 Silver Acorns | 100 acorns each |
+| 💚🌰 Emerald Acorns | 1,000 acorns each |
+| ✨🌰 Golden Acorns | 10,000 acorns each |
 
-## Features
+## Self-Hosting
 
-- **Leveling system** — XP from catches, better loot at higher levels
-- **Bestiary** — track all 14 species discoveries
-- **Junk catches** — sometimes you get a stick instead of a squirrel
-- **Cooldowns** — 10 second catch cooldown
-- **Daily bonus** — scales with your level
-- **Leaderboard** — compete with friends
-- **Persistent data** — saved to `player_data.json`
+### Prerequisites
 
-## Hosting Tips
+- Python 3.10+
+- PostgreSQL
+- A Discord bot token
 
-For 24/7 uptime, run on any cheap VPS, a Raspberry Pi, or use a free tier from Railway/Render/Fly.io.
+### Setup
 
----
+1. **Clone the repo**
 
-*Happy squirrel hunting!* 🐿️🌰
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/SquirrelCatcher.git
+   cd SquirrelCatcher
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   Or with [uv](https://docs.astral.sh/uv/):
+
+   ```bash
+   uv sync
+   ```
+
+3. **Create a `.env` file**
+
+   ```
+   DISCORD_BOT_TOKEN=your-bot-token
+   DATABASE_URL=postgresql://user:password@localhost:5432/squirrel_catcher
+   ```
+
+4. **Create a Discord bot**
+
+   - Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+   - Create a new application
+   - Go to **Bot** → **Add Bot**
+   - Enable **Message Content Intent** under Privileged Gateway Intents
+   - Copy the token into your `.env`
+
+5. **Invite the bot to your server**
+
+   - Go to **OAuth2 → URL Generator**
+   - Scopes: `bot`, `applications.commands`
+   - Permissions: `Send Messages`, `Embed Links`, `Read Message History`
+   - Open the generated URL to add the bot
+
+6. **Run**
+
+   ```bash
+   # Start the bot
+   python bot.py
+
+   # Start the landing page server (optional)
+   python server.py
+   ```
+
+### Deploy to Railway
+
+The project includes a `Procfile` for [Railway](https://railway.app) deployment:
+
+```
+worker: python bot.py
+web: python server.py
+```
+
+1. Connect your repo to Railway
+2. Add a PostgreSQL plugin
+3. Set `DISCORD_BOT_TOKEN` in environment variables
+4. Deploy — Railway handles the rest
+
+## Tech Stack
+
+- **Python** with [discord.py](https://discordpy.readthedocs.io/)
+- **PostgreSQL** with [asyncpg](https://github.com/MagicStack/asyncpg)
+- **aiohttp** for the landing page server
+- **Railway** for deployment
+
+## Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+## License
+
+MIT
