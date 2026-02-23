@@ -44,20 +44,42 @@ EXCHANGE_RATES = {
 
 SQUIRRELS = [
     # (name, emoji, rarity, min_acorns, max_acorns, weight_chance)
+    # ── Common (~78%) ──
     ("Grey Squirrel", "🐿️", "Common", 1, 5, 40),
-    ("Red Squirrel", "🐿️", "Common", 2, 8, 30),
-    ("Chipmunk", "🐿️", "Common", 1, 4, 35),
-    ("Black Squirrel", "🖤🐿️", "Uncommon", 5, 15, 18),
-    ("White Squirrel", "🤍🐿️", "Uncommon", 8, 20, 12),
-    ("Fox Squirrel", "🦊🐿️", "Uncommon", 6, 18, 15),
-    ("Flying Squirrel", "🪂🐿️", "Rare", 15, 40, 7),
-    ("Albino Squirrel", "👻🐿️", "Rare", 20, 50, 5),
-    ("Giant Squirrel", "💪🐿️", "Rare", 25, 60, 4),
-    ("Crystal Squirrel", "💎🐿️", "Epic", 50, 120, 2),
-    ("Shadow Squirrel", "🌑🐿️", "Epic", 60, 150, 1.5),
-    ("Golden Squirrel", "👑🐿️", "Legendary", 150, 400, 0.5),
-    ("Cosmic Squirrel", "🌌🐿️", "Legendary", 200, 500, 0.3),
-    ("Mythic Nutcracker", "⚡🐿️", "Mythic", 500, 1200, 0.1),
+    ("Red Squirrel", "🐿️", "Common", 2, 8, 35),
+    ("Chipmunk", "🐿️", "Common", 1, 4, 38),
+    ("Eastern Squirrel", "🌳🐿️", "Common", 2, 6, 32),
+    ("Park Squirrel", "🏞️🐿️", "Common", 1, 5, 30),
+    ("Acorn Hoarder", "🌰🐿️", "Common", 3, 7, 28),
+    ("Bushy Tail", "🍂🐿️", "Common", 2, 6, 25),
+    ("Tiny Squirrel", "🐾🐿️", "Common", 1, 3, 35),
+    # ── Uncommon (~20%) ──
+    ("Black Squirrel", "🖤🐿️", "Uncommon", 5, 15, 12),
+    ("White Squirrel", "🤍🐿️", "Uncommon", 8, 20, 8),
+    ("Fox Squirrel", "🦊🐿️", "Uncommon", 6, 18, 10),
+    ("Striped Squirrel", "🦝🐿️", "Uncommon", 7, 16, 9),
+    ("Pine Squirrel", "🌲🐿️", "Uncommon", 5, 14, 11),
+    ("Marsh Squirrel", "🌿🐿️", "Uncommon", 6, 15, 8),
+    ("Cinnamon Squirrel", "🟤🐿️", "Uncommon", 7, 17, 9),
+    # ── Rare (~2%) ──
+    ("Flying Squirrel", "🪂🐿️", "Rare", 15, 40, 1.5),
+    ("Albino Squirrel", "👻🐿️", "Rare", 20, 50, 1.2),
+    ("Giant Squirrel", "💪🐿️", "Rare", 25, 60, 1.0),
+    ("Arctic Squirrel", "❄️🐿️", "Rare", 18, 45, 1.3),
+    ("Clockwork Squirrel", "⚙️🐿️", "Rare", 22, 55, 0.8),
+    ("Jungle Squirrel", "🌴🐿️", "Rare", 20, 48, 1.0),
+    # ── Epic (~0.25%) ──
+    ("Crystal Squirrel", "💎🐿️", "Epic", 50, 120, 0.25),
+    ("Shadow Squirrel", "🌑🐿️", "Epic", 60, 150, 0.20),
+    ("Phoenix Squirrel", "🔥🐿️", "Epic", 55, 130, 0.22),
+    ("Storm Squirrel", "⛈️🐿️", "Epic", 65, 140, 0.18),
+    # ── Legendary (~0.03%) ──
+    ("Golden Squirrel", "👑🐿️", "Legendary", 150, 400, 0.04),
+    ("Cosmic Squirrel", "🌌🐿️", "Legendary", 200, 500, 0.03),
+    ("Void Squirrel", "🕳️🐿️", "Legendary", 180, 450, 0.035),
+    # ── Mythic (~0.004%) ──
+    ("Mythic Nutcracker", "⚡🐿️", "Mythic", 500, 1200, 0.008),
+    ("Celestial Squirrel", "✨🐿️", "Mythic", 600, 1500, 0.005),
 ]
 
 RARITY_COLORS = {
@@ -94,7 +116,7 @@ SHOP_ITEMS = {
     "lucky_acorn": {"name": "Lucky Acorn", "emoji": "🍀", "cost": 1000, "currency": "acorns",
                      "description": "2x acorn rewards (30 min)", "type": "timed", "duration_minutes": 30},
     "rare_scent": {"name": "Rare Scent", "emoji": "✨", "cost": 2500, "currency": "acorns",
-                    "description": "+3% Rare+ drop rate (20 catches)", "type": "consumable", "charges": 20},
+                    "description": "+50% Rare+ drop rate (20 catches)", "type": "consumable", "charges": 20},
     "squirrel_hunter": {"name": "Squirrel Hunter", "emoji": "🏹", "cost": 5000, "currency": "acorns",
                          "description": "Auto-catch every 30 min (24h)", "type": "auto_catch",
                          "interval_minutes": 30, "duration_hours": 24},
@@ -155,14 +177,14 @@ def roll_catch(player_level: int, junk_resist_tier: int = 0,
 
     # Weighted random squirrel selection
     # Higher level = slightly better luck
-    level_bonus = min(player_level * 0.5, 10)
-    rare_bonus = 3 if has_rare_scent else 0
+    level_bonus = min(player_level * 0.5, 10)  # up to +10% at high levels
+    scent_bonus = 50 if has_rare_scent else 0   # +50% from rare scent buff
     weights = []
     for sq in SQUIRRELS:
         w = sq[5]
-        # Boost rare+ squirrels slightly based on level
+        # Boost rare+ squirrels based on level and buffs
         if sq[2] in ("Rare", "Epic", "Legendary", "Mythic"):
-            w *= (1 + (level_bonus + rare_bonus) / 100)
+            w *= (1 + (level_bonus + scent_bonus) / 100)
         weights.append(w)
 
     chosen = random.choices(SQUIRRELS, weights=weights, k=1)[0]

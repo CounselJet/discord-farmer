@@ -485,6 +485,7 @@
   .feature-card:nth-child(4) .feature-icon { background: rgba(155, 89, 182, 0.15); }
   .feature-card:nth-child(5) .feature-icon { background: rgba(241, 196, 15, 0.15); }
   .feature-card:nth-child(6) .feature-icon { background: rgba(231, 76, 60, 0.15); }
+  .feature-card:nth-child(7) .feature-icon { background: rgba(241, 196, 15, 0.15); }
 
   .feature-card h3 {
     font-family: var(--font-display);
@@ -836,7 +837,7 @@
       <div class="feature-card">
         <div class="feature-icon">🎣</div>
         <h3>Catch Squirrels</h3>
-        <p>Use <code>!sq catch</code> to search the forest. 14 species across 6 rarity tiers — from common Grey Squirrels to the elusive Mythic Nutcracker.</p>
+        <p>Use <code>!sq catch</code> to search the forest. 30 species across 6 rarity tiers — from common Grey Squirrels to the elusive Mythic Nutcracker.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🌰</div>
@@ -851,12 +852,17 @@
       <div class="feature-card">
         <div class="feature-icon">📖</div>
         <h3>Bestiary</h3>
-        <p>Track every species you've discovered in a Pokédex-style bestiary. Gotta catch 'em all — all 14 of them.</p>
+        <p>Track every species you've discovered in a Pokédex-style bestiary. Gotta catch 'em all — all 30 of them.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🏆</div>
         <h3>Leaderboards</h3>
         <p>Compete against your server. The leaderboard ranks players by total acorn value — flex your wealth.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛒</div>
+        <h3>Shop & Upgrades</h3>
+        <p>Spend acorns on consumable buffs, permanent upgrades, and auto-catch hunters. Upgrade your trap, boost rare drops, and idle your way to riches.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎁</div>
@@ -871,7 +877,7 @@
 <section id="squirrels">
   <div class="container">
     <div class="section-label reveal">The Collection</div>
-    <h2 class="section-title reveal">14 species to discover.</h2>
+    <h2 class="section-title reveal">30 species to discover.</h2>
     <p class="section-desc reveal">From the forests to the cosmos. Each rarity tier brings bigger rewards — and slimmer odds.</p>
     <div class="rarity-tabs" id="rarityTabs">
       <button class="rarity-tab active" data-rarity="All">All</button>
@@ -902,6 +908,9 @@
       <div class="command-row"><span class="command-code">!sq daily</span><span class="command-desc">Claim your daily acorn bonus</span></div>
       <div class="command-row"><span class="command-code">!sq bestiary</span><span class="command-desc">Pokédex-style species tracker</span></div>
       <div class="command-row"><span class="command-code">!sq leaderboard</span><span class="command-desc">Top 10 players by total acorn value</span></div>
+      <div class="command-row"><span class="command-code">!sq shop</span><span class="command-desc">Browse buffs, consumables, and upgrades</span></div>
+      <div class="command-row"><span class="command-code">!sq buy &lt;item&gt;</span><span class="command-desc">Purchase an item from the shop</span></div>
+      <div class="command-row"><span class="command-code">!sq buffs</span><span class="command-desc">View your active buffs and upgrades</span></div>
     </div>
   </div>
 </section>
@@ -961,20 +970,42 @@
 <script>
   // ─── Squirrel Data ───
   const squirrels = [
+    // Common
     { name: "Grey Squirrel", emoji: "🐿️", rarity: "Common", reward: "1–5", xp: 5 },
     { name: "Red Squirrel", emoji: "🐿️", rarity: "Common", reward: "2–8", xp: 5 },
     { name: "Chipmunk", emoji: "🐿️", rarity: "Common", reward: "1–4", xp: 5 },
+    { name: "Eastern Squirrel", emoji: "🌳🐿️", rarity: "Common", reward: "2–6", xp: 5 },
+    { name: "Park Squirrel", emoji: "🏞️🐿️", rarity: "Common", reward: "1–5", xp: 5 },
+    { name: "Acorn Hoarder", emoji: "🌰🐿️", rarity: "Common", reward: "3–7", xp: 5 },
+    { name: "Bushy Tail", emoji: "🍂🐿️", rarity: "Common", reward: "2–6", xp: 5 },
+    { name: "Tiny Squirrel", emoji: "🐾🐿️", rarity: "Common", reward: "1–3", xp: 5 },
+    // Uncommon
     { name: "Black Squirrel", emoji: "🖤🐿️", rarity: "Uncommon", reward: "5–15", xp: 10 },
     { name: "White Squirrel", emoji: "🤍🐿️", rarity: "Uncommon", reward: "8–20", xp: 10 },
     { name: "Fox Squirrel", emoji: "🦊🐿️", rarity: "Uncommon", reward: "6–18", xp: 10 },
+    { name: "Striped Squirrel", emoji: "🦝🐿️", rarity: "Uncommon", reward: "7–16", xp: 10 },
+    { name: "Pine Squirrel", emoji: "🌲🐿️", rarity: "Uncommon", reward: "5–14", xp: 10 },
+    { name: "Marsh Squirrel", emoji: "🌿🐿️", rarity: "Uncommon", reward: "6–15", xp: 10 },
+    { name: "Cinnamon Squirrel", emoji: "🟤🐿️", rarity: "Uncommon", reward: "7–17", xp: 10 },
+    // Rare
     { name: "Flying Squirrel", emoji: "🪂🐿️", rarity: "Rare", reward: "15–40", xp: 20 },
     { name: "Albino Squirrel", emoji: "👻🐿️", rarity: "Rare", reward: "20–50", xp: 20 },
     { name: "Giant Squirrel", emoji: "💪🐿️", rarity: "Rare", reward: "25–60", xp: 20 },
+    { name: "Arctic Squirrel", emoji: "❄️🐿️", rarity: "Rare", reward: "18–45", xp: 20 },
+    { name: "Clockwork Squirrel", emoji: "⚙️🐿️", rarity: "Rare", reward: "22–55", xp: 20 },
+    { name: "Jungle Squirrel", emoji: "🌴🐿️", rarity: "Rare", reward: "20–48", xp: 20 },
+    // Epic
     { name: "Crystal Squirrel", emoji: "💎🐿️", rarity: "Epic", reward: "50–120", xp: 40 },
     { name: "Shadow Squirrel", emoji: "🌑🐿️", rarity: "Epic", reward: "60–150", xp: 40 },
+    { name: "Phoenix Squirrel", emoji: "🔥🐿️", rarity: "Epic", reward: "55–130", xp: 40 },
+    { name: "Storm Squirrel", emoji: "⛈️🐿️", rarity: "Epic", reward: "65–140", xp: 40 },
+    // Legendary
     { name: "Golden Squirrel", emoji: "👑🐿️", rarity: "Legendary", reward: "150–400", xp: 80 },
     { name: "Cosmic Squirrel", emoji: "🌌🐿️", rarity: "Legendary", reward: "200–500", xp: 80 },
+    { name: "Void Squirrel", emoji: "🕳️🐿️", rarity: "Legendary", reward: "180–450", xp: 80 },
+    // Mythic
     { name: "Mythic Nutcracker", emoji: "⚡🐿️", rarity: "Mythic", reward: "500–1,200", xp: 200 },
+    { name: "Celestial Squirrel", emoji: "✨🐿️", rarity: "Mythic", reward: "600–1,500", xp: 200 },
   ];
 
   // ─── Render Squirrel Grid ───
