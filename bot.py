@@ -425,11 +425,15 @@ class BuyButton(discord.ui.Button):
         await do_buy(interaction, self.item_key)
 
 
+_SHOP_PAGE_SIZE = 5  # items per page in shop
+
+
 class ShopItemsView(discord.ui.View):
-    """Category-tabbed view of purchasable shop items."""
-    def __init__(self, player=None, category="bait"):
+    """Category-tabbed view of purchasable shop items with pagination."""
+    def __init__(self, player=None, category="bait", page=0):
         super().__init__(timeout=None)
         self.category = category
+        self.page = page
 
         # Row 0: Category tabs (current one disabled)
         for cat_key, cat in _SHOP_CATEGORIES.items():
@@ -438,10 +442,31 @@ class ShopItemsView(discord.ui.View):
                 is_current=(cat_key == category), row=0,
             ))
 
-        # Rows 1-3: Buy buttons for items in selected category (4 per row)
-        cat_keys = _SHOP_CATEGORIES[category]["keys"]
-        for i, key in enumerate(cat_keys):
-            self.add_item(BuyButton(key, player=player, row=1 + i // 4))
+        # Paginate items
+        all_keys = _SHOP_CATEGORIES[category]["keys"]
+        total_pages = max(1, (len(all_keys) + _SHOP_PAGE_SIZE - 1) // _SHOP_PAGE_SIZE)
+        page = min(page, total_pages - 1)
+        start = page * _SHOP_PAGE_SIZE
+        page_keys = all_keys[start:start + _SHOP_PAGE_SIZE]
+
+        # Rows 1-2: Buy buttons for current page (max 5 items)
+        for i, key in enumerate(page_keys):
+            self.add_item(BuyButton(key, player=player, row=1 + i // 3))
+
+        # Row 3: Pagination arrows (if needed)
+        if total_pages > 1:
+            self.add_item(ShopPageButton(
+                direction="prev", category=category, page=page,
+                total_pages=total_pages, row=3,
+            ))
+            self.add_item(discord.ui.Button(
+                label=f"{page + 1}/{total_pages}", style=discord.ButtonStyle.secondary,
+                disabled=True, custom_id=f"shop_page_label:{category}:{page}", row=3,
+            ))
+            self.add_item(ShopPageButton(
+                direction="next", category=category, page=page,
+                total_pages=total_pages, row=3,
+            ))
 
         # Row 4: Back button
         self.add_item(BackToShopMenuButton(row=4))
@@ -461,8 +486,31 @@ class ShopCategoryButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         player = await db.get_player(str(interaction.user.id))
-        embed = _build_shop_embed(player, category=self.cat_key)
-        await interaction.response.edit_message(embed=embed, view=ShopItemsView(player=player, category=self.cat_key))
+        embed = _build_shop_embed(player, category=self.cat_key, page=0)
+        await interaction.response.edit_message(embed=embed, view=ShopItemsView(player=player, category=self.cat_key, page=0))
+
+
+class ShopPageButton(discord.ui.Button):
+    """Arrow button to navigate shop pages within a category."""
+    def __init__(self, *, direction, category, page, total_pages, row):
+        is_prev = direction == "prev"
+        super().__init__(
+            emoji="◀️" if is_prev else "▶️",
+            style=discord.ButtonStyle.secondary,
+            disabled=(page == 0 if is_prev else page >= total_pages - 1),
+            custom_id=f"shop_page:{category}:{direction}:{page}",
+            row=row,
+        )
+        self.category = category
+        self.target_page = (page - 1) if is_prev else (page + 1)
+
+    async def callback(self, interaction: discord.Interaction):
+        player = await db.get_player(str(interaction.user.id))
+        embed = _build_shop_embed(player, category=self.category, page=self.target_page)
+        await interaction.response.edit_message(
+            embed=embed,
+            view=ShopItemsView(player=player, category=self.category, page=self.target_page),
+        )
 
 
 
@@ -531,12 +579,17 @@ class BackToShopMenuButton2(discord.ui.Button):
         await interaction.response.edit_message(embed=embed, view=MenuView(page="shop"))
 
 
-def _build_shop_embed(player, category=None):
-    """Build the shop embed showing items and balance."""
+def _build_shop_embed(player, category=None, page=0):
+    """Build the shop embed showing items and balance (paginated)."""
     if category and category in _SHOP_CATEGORIES:
         cat = _SHOP_CATEGORIES[category]
-        embed = discord.Embed(title=f"🛒 Squirrel Shop — {cat['emoji']} {cat['label']}", color=0xE67E22)
-        keys = cat["keys"]
+        all_keys = cat["keys"]
+        total_pages = max(1, (len(all_keys) + _SHOP_PAGE_SIZE - 1) // _SHOP_PAGE_SIZE)
+        page = min(page, total_pages - 1)
+        start = page * _SHOP_PAGE_SIZE
+        keys = all_keys[start:start + _SHOP_PAGE_SIZE]
+        title = f"🛒 Squirrel Shop — {cat['emoji']} {cat['label']}"
+        embed = discord.Embed(title=title, color=0xE67E22)
     else:
         embed = discord.Embed(title="🛒 Squirrel Shop", color=0xE67E22)
         keys = _SHOP_CONSUMABLE_KEYS
@@ -1257,10 +1310,13 @@ async def do_buy(ctx_or_interaction, item_key: str):
         await ctx_or_interaction.response.send_message(embed=embed, ephemeral=True)
         # Refresh the shop view on the original message with updated balance
         refreshed_player = await db.get_player(user_id)
-        # Determine which category the purchased item belongs to
+        # Determine which category and page the purchased item belongs to
         cat = _item_category(item_key)
-        shop_embed = _build_shop_embed(refreshed_player, category=cat)
-        await ctx_or_interaction.message.edit(embed=shop_embed, view=ShopItemsView(player=refreshed_player, category=cat))
+        cat_keys = _SHOP_CATEGORIES[cat]["keys"]
+        item_idx = cat_keys.index(item_key) if item_key in cat_keys else 0
+        page = item_idx // _SHOP_PAGE_SIZE
+        shop_embed = _build_shop_embed(refreshed_player, category=cat, page=page)
+        await ctx_or_interaction.message.edit(embed=shop_embed, view=ShopItemsView(player=refreshed_player, category=cat, page=page))
     else:
         await _send(ctx_or_interaction, embed)
 
