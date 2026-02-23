@@ -170,58 +170,150 @@ def roll_catch(player_level: int, junk_resist_tier: int = 0,
 
     return ("squirrel", chosen, acorns)
 
-# ─── MENU VIEW ───────────────────────────────────────────────────────────────
+# ─── MENU PAGES ──────────────────────────────────────────────────────────────
+
+MENU_PAGES = {
+    "play": {"label": "Play", "emoji": "🎮"},
+    "shop": {"label": "Shop & Buffs", "emoji": "🛒"},
+    "info": {"label": "Info", "emoji": "📋"},
+}
+
+
+async def get_page_embed(page, user):
+    """Get the navigation embed shown when switching to a menu page."""
+    if page == "play":
+        return discord.Embed(
+            title="🐿️ Squirrel Catcher",
+            description=(
+                "Set traps, catch squirrels, and become the ultimate wrangler!\n"
+                "Use the buttons below to play, or the dropdown to navigate."
+            ),
+            color=0x8B4513,
+        )
+    elif page == "shop":
+        player = await db.get_player(str(user.id))
+        embed = discord.Embed(
+            title="🛒 Shop & Buffs",
+            description="Spend your acorns on buffs and permanent upgrades!",
+            color=0xE67E22,
+        )
+        embed.add_field(
+            name="Your Balance",
+            value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,}",
+            inline=False,
+        )
+        return embed
+    elif page == "info":
+        return discord.Embed(
+            title="📋 Information",
+            description="Check your daily bonus, explore the bestiary, view leaderboards, and more!",
+            color=0x3498DB,
+        )
+    return discord.Embed(title="🐿️ Squirrel Catcher", color=0x8B4513)
+
+
+# ─── MENU COMPONENTS ────────────────────────────────────────────────────────
+
+class MenuButton(discord.ui.Button):
+    """A button that triggers a game action and sends a new message."""
+    def __init__(self, *, action, **kwargs):
+        super().__init__(**kwargs)
+        self.action = action
+
+    async def callback(self, interaction: discord.Interaction):
+        handlers = {
+            "catch": do_catch, "bag": do_bag, "balance": do_balance,
+            "profile": do_profile, "shop": do_shop, "buffs": do_buffs,
+            "daily": do_daily, "bestiary": do_bestiary,
+            "leaderboard": do_leaderboard, "exchange": do_exchange_info,
+            "help": do_help,
+        }
+        handler = handlers.get(self.action)
+        if handler:
+            await handler(interaction)
+
+
+class BackButton(discord.ui.Button):
+    """Navigates back to the previous menu page by editing the message."""
+    def __init__(self, *, page, prev_page):
+        super().__init__(
+            label="Back", emoji="◀️", style=discord.ButtonStyle.secondary,
+            custom_id=f"{page}:back:{prev_page}", row=1,
+        )
+        self.target = prev_page
+
+    async def callback(self, interaction: discord.Interaction):
+        embed = await get_page_embed(self.target, interaction.user)
+        view = MenuView(page=self.target)
+        await interaction.response.edit_message(embed=embed, view=view)
+
+
+class PageSelect(discord.ui.Select):
+    """Dropdown to switch between menu pages by editing the message."""
+    def __init__(self, current_page):
+        options = [
+            discord.SelectOption(
+                label=info["label"], value=key, emoji=info["emoji"],
+                default=(key == current_page),
+            )
+            for key, info in MENU_PAGES.items()
+        ]
+        super().__init__(
+            options=options, custom_id=f"{current_page}:select",
+            placeholder="Navigate...", row=1,
+        )
+        self.current_page = current_page
+
+    async def callback(self, interaction: discord.Interaction):
+        selected = self.values[0]
+        if selected == self.current_page:
+            await interaction.response.defer()
+            return
+        embed = await get_page_embed(selected, interaction.user)
+        view = MenuView(page=selected, prev_page=self.current_page)
+        await interaction.response.edit_message(embed=embed, view=view)
+
 
 class MenuView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=120)
-        self.add_item(discord.ui.Button(label="Donate", style=discord.ButtonStyle.link, emoji="💛", url="https://ko-fi.com/squirrelcatcher", row=0))
+    """Dynamic menu view that shows different buttons based on the current page."""
+    def __init__(self, page="play", prev_page=None):
+        super().__init__(timeout=None)
+        self.current_page = page
+        self.prev_page = prev_page
 
-    @discord.ui.button(label="Catch!", style=discord.ButtonStyle.green, emoji="🪤", row=0)
-    async def catch_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await do_catch(interaction)
+        # Row 0: Page-specific action buttons
+        if page == "play":
+            self.add_item(MenuButton(label="Catch!", emoji="🪤", style=discord.ButtonStyle.green,
+                                     action="catch", custom_id="play:catch", row=0))
+            self.add_item(MenuButton(label="Bag", emoji="🎒", style=discord.ButtonStyle.primary,
+                                     action="bag", custom_id="play:bag", row=0))
+            self.add_item(MenuButton(label="Balance", emoji="💰", style=discord.ButtonStyle.primary,
+                                     action="balance", custom_id="play:balance", row=0))
+            self.add_item(MenuButton(label="Profile", emoji="🐿️", style=discord.ButtonStyle.primary,
+                                     action="profile", custom_id="play:profile", row=0))
+            self.add_item(discord.ui.Button(label="Donate", style=discord.ButtonStyle.link,
+                                            emoji="💛", url="https://ko-fi.com/squirrelcatcher", row=0))
+        elif page == "shop":
+            self.add_item(MenuButton(label="Browse Shop", emoji="🛒", style=discord.ButtonStyle.green,
+                                     action="shop", custom_id="shop:browse", row=0))
+            self.add_item(MenuButton(label="Active Buffs", emoji="⚡", style=discord.ButtonStyle.primary,
+                                     action="buffs", custom_id="shop:buffs", row=0))
+        elif page == "info":
+            self.add_item(MenuButton(label="Daily", emoji="🎁", style=discord.ButtonStyle.green,
+                                     action="daily", custom_id="info:daily", row=0))
+            self.add_item(MenuButton(label="Bestiary", emoji="📖", style=discord.ButtonStyle.primary,
+                                     action="bestiary", custom_id="info:bestiary", row=0))
+            self.add_item(MenuButton(label="Leaderboard", emoji="🏆", style=discord.ButtonStyle.primary,
+                                     action="leaderboard", custom_id="info:leaderboard", row=0))
+            self.add_item(MenuButton(label="Exchange", emoji="🔄", style=discord.ButtonStyle.primary,
+                                     action="exchange", custom_id="info:exchange", row=0))
+            self.add_item(MenuButton(label="Help", emoji="❓", style=discord.ButtonStyle.primary,
+                                     action="help", custom_id="info:help", row=0))
 
-    @discord.ui.button(label="Bag", style=discord.ButtonStyle.primary, emoji="🎒", row=0)
-    async def bag_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await do_bag(interaction)
-
-    @discord.ui.button(label="Balance", style=discord.ButtonStyle.primary, emoji="💰", row=0)
-    async def balance_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await do_balance(interaction)
-
-    @discord.ui.button(label="Profile", style=discord.ButtonStyle.primary, emoji="🐿️", row=0)
-    async def profile_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await do_profile(interaction)
-
-    @discord.ui.select(
-        placeholder="More actions...",
-        options=[
-            discord.SelectOption(label="Shop", value="shop", emoji="🛒"),
-            discord.SelectOption(label="Active Buffs", value="buffs", emoji="⚡"),
-            discord.SelectOption(label="Daily Bonus", value="daily", emoji="🎁"),
-            discord.SelectOption(label="Bestiary", value="bestiary", emoji="📖"),
-            discord.SelectOption(label="Leaderboard", value="leaderboard", emoji="🏆"),
-            discord.SelectOption(label="Exchange Rates", value="exchange", emoji="🔄"),
-            discord.SelectOption(label="Help", value="help", emoji="❓"),
-        ],
-        row=1,
-    )
-    async def menu_select(self, interaction: discord.Interaction, select: discord.ui.Select):
-        choice = select.values[0]
-        if choice == "shop":
-            await do_shop(interaction)
-        elif choice == "buffs":
-            await do_buffs(interaction)
-        elif choice == "daily":
-            await do_daily(interaction)
-        elif choice == "bestiary":
-            await do_bestiary(interaction)
-        elif choice == "leaderboard":
-            await do_leaderboard(interaction)
-        elif choice == "exchange":
-            await do_exchange_info(interaction)
-        elif choice == "help":
-            await do_help(interaction)
+        # Row 1: Back button (if navigated from another page) + Page selector
+        if prev_page is not None:
+            self.add_item(BackButton(page=page, prev_page=prev_page))
+        self.add_item(PageSelect(current_page=page))
 
 
 async def _send(ctx_or_interaction, embed, view=None, ephemeral=False):
@@ -1066,4 +1158,10 @@ async def on_command_error(ctx, error):
 
 if __name__ == "__main__":
     print("🐿️ Starting Squirrel Catcher Bot...")
+    # Register persistent views for all page combinations
+    for page in MENU_PAGES:
+        bot.add_view(MenuView(page=page))
+        for prev in MENU_PAGES:
+            if prev != page:
+                bot.add_view(MenuView(page=page, prev_page=prev))
     bot.run(BOT_TOKEN)
