@@ -332,31 +332,39 @@ class MenuView(discord.ui.View):
 
 # ─── SHOP VIEWS ──────────────────────────────────────────────────────────────
 
-# Items that appear in the paginated shop (non-upgrade items)
+# Shop item categories
+_SHOP_CATEGORIES = {
+    "bait":    {"label": "Bait",    "emoji": "🥜", "keys": ["squirrel_bait", "golden_bait"]},
+    "buffs":   {"label": "Buffs",   "emoji": "🍀", "keys": ["lucky_acorn", "rare_scent"]},
+    "helpers": {"label": "Helpers", "emoji": "🏹", "keys": ["squirrel_hunter", "elite_hunter"]},
+}
 _SHOP_CONSUMABLE_KEYS = [k for k, v in SHOP_ITEMS.items() if v["type"] != "upgrade"]
-_SHOP_PAGE_SIZE = 5
+
+
+def _item_category(item_key):
+    """Return the shop category for a given item key, or 'bait' as default."""
+    for cat_key, cat in _SHOP_CATEGORIES.items():
+        if item_key in cat["keys"]:
+            return cat_key
+    return "bait"
 
 
 class BuyButton(discord.ui.Button):
     """A button that purchases a shop item when clicked."""
-    def __init__(self, item_key, *, row=0):
+    def __init__(self, item_key, *, player=None, row=0):
         item = SHOP_ITEMS.get(item_key) or {}
-        upgrade = UPGRADE_TIERS.get(item_key)
-        if upgrade:
-            label = upgrade["name"]
-            emoji = "🪤"
-        else:
-            label = item.get("name", item_key)
-            emoji = item.get("emoji")
-        currency_emoji = CURRENCIES.get(item.get("currency", "acorns"), "🌰")
-        if upgrade:
-            cost_str = ""  # upgrades have variable cost per tier
-        else:
-            cost_str = f" ({item['cost']:,}{currency_emoji})"
+        label = item.get("name", item_key)
+        emoji = item.get("emoji")
+        currency = item.get("currency", "acorns")
+        cost = item.get("cost", 0)
+        currency_emoji = CURRENCIES.get(currency, "🌰")
+        cost_str = f" ({cost:,}{currency_emoji})"
+        can_afford = (player or {}).get(currency, 0) >= cost if player else True
         super().__init__(
             label=f"{label}{cost_str}",
             emoji=emoji,
             style=discord.ButtonStyle.green,
+            disabled=not can_afford,
             custom_id=f"buy:{item_key}",
             row=row,
         )
@@ -367,42 +375,43 @@ class BuyButton(discord.ui.Button):
 
 
 class ShopItemsView(discord.ui.View):
-    """Paginated view of purchasable shop items."""
-    def __init__(self, page=0):
+    """Category-tabbed view of purchasable shop items."""
+    def __init__(self, player=None, category="bait"):
         super().__init__(timeout=None)
-        self.page = page
-        total_items = len(_SHOP_CONSUMABLE_KEYS)
-        self.max_page = max(0, (total_items - 1) // _SHOP_PAGE_SIZE)
-        self.page = min(self.page, self.max_page)
+        self.category = category
 
-        # Rows 0-1: Buy buttons for items on current page
-        start = self.page * _SHOP_PAGE_SIZE
-        page_keys = _SHOP_CONSUMABLE_KEYS[start:start + _SHOP_PAGE_SIZE]
-        for i, key in enumerate(page_keys):
-            self.add_item(BuyButton(key, row=i // 3))  # up to 3 per row, rows 0-1
+        # Row 0: Category tabs (current one disabled)
+        for cat_key, cat in _SHOP_CATEGORIES.items():
+            self.add_item(ShopCategoryButton(
+                cat_key=cat_key, label=cat["label"], emoji=cat["emoji"],
+                is_current=(cat_key == category), row=0,
+            ))
 
-        # Row 3: Navigation
-        self.add_item(ShopNavButton(label="◀ Prev", disabled=(self.page == 0),
-                                     direction=-1, current_page=self.page, row=3))
-        self.add_item(ShopNavButton(label="▶ Next", disabled=(self.page >= self.max_page),
-                                     direction=1, current_page=self.page, row=3))
+        # Rows 1-2: Buy buttons for items in selected category
+        cat_keys = _SHOP_CATEGORIES[category]["keys"]
+        for i, key in enumerate(cat_keys):
+            self.add_item(BuyButton(key, player=player, row=1 + i // 3))
 
         # Row 4: Back button
         self.add_item(BackToShopMenuButton(row=4))
 
 
-class ShopNavButton(discord.ui.Button):
-    """Prev/Next page button for the shop."""
-    def __init__(self, *, direction, current_page, **kwargs):
-        super().__init__(style=discord.ButtonStyle.secondary, **kwargs)
-        self.direction = direction
-        self.current_page = current_page
+class ShopCategoryButton(discord.ui.Button):
+    """Tab button to switch shop item categories."""
+    def __init__(self, *, cat_key, label, emoji, is_current, row):
+        super().__init__(
+            label=label, emoji=emoji,
+            style=discord.ButtonStyle.primary if is_current else discord.ButtonStyle.secondary,
+            disabled=is_current,
+            custom_id=f"shop_cat:{cat_key}",
+            row=row,
+        )
+        self.cat_key = cat_key
 
     async def callback(self, interaction: discord.Interaction):
-        new_page = self.current_page + self.direction
         player = await db.get_player(str(interaction.user.id))
-        embed = _build_shop_embed(player)
-        await interaction.response.edit_message(embed=embed, view=ShopItemsView(page=new_page))
+        embed = _build_shop_embed(player, category=self.cat_key)
+        await interaction.response.edit_message(embed=embed, view=ShopItemsView(player=player, category=self.cat_key))
 
 
 
@@ -424,6 +433,7 @@ class ShopUpgradeView(discord.ui.View):
         # Row 0: Upgrade buy buttons
         for key, upgrade in UPGRADE_TIERS.items():
             current_tier = (player or {}).get(key, 0)
+            acorns = (player or {}).get("acorns", 0)
             if current_tier >= upgrade["max"]:
                 label = f"{upgrade['name']} (MAX)"
                 disabled = True
@@ -432,7 +442,7 @@ class ShopUpgradeView(discord.ui.View):
                 tier = upgrade["tiers"][current_tier]
                 label = f"{upgrade['name']}"
                 cost_str = f" ({tier['cost']:,}🌰)"
-                disabled = False
+                disabled = acorns < tier["cost"]
             self.add_item(UpgradeBuyButton(
                 upgrade_key=key, label=f"{label}{cost_str}",
                 disabled=disabled, row=0,
@@ -470,21 +480,26 @@ class BackToShopMenuButton2(discord.ui.Button):
         await interaction.response.edit_message(embed=embed, view=MenuView(page="shop"))
 
 
-def _build_shop_embed(player):
+def _build_shop_embed(player, category=None):
     """Build the shop embed showing items and balance."""
-    embed = discord.Embed(title="🛒 Squirrel Shop", color=0xE67E22)
+    if category and category in _SHOP_CATEGORIES:
+        cat = _SHOP_CATEGORIES[category]
+        embed = discord.Embed(title=f"🛒 Squirrel Shop — {cat['emoji']} {cat['label']}", color=0xE67E22)
+        keys = cat["keys"]
+    else:
+        embed = discord.Embed(title="🛒 Squirrel Shop", color=0xE67E22)
+        keys = _SHOP_CONSUMABLE_KEYS
     item_lines = []
-    for key in _SHOP_CONSUMABLE_KEYS:
+    for key in keys:
         item = SHOP_ITEMS[key]
         currency_emoji = CURRENCIES.get(item["currency"], "🌰")
         item_lines.append(f"{item['emoji']} **{item['name']}** — {item['cost']:,} {currency_emoji}\n  _{item['description']}_")
-    embed.add_field(name="Items & Buffs", value="\n".join(item_lines), inline=False)
+    embed.add_field(name="Items", value="\n".join(item_lines), inline=False)
     embed.add_field(
         name="Your Balance",
         value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,}",
         inline=False,
     )
-    embed.set_footer(text="Click a button to buy, or browse Permanent Upgrades")
     return embed
 
 
@@ -787,7 +802,8 @@ async def do_catch(ctx_or_interaction):
 async def do_bag(ctx_or_interaction):
     is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
     user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
-    player = await db.get_player(str(user.id))
+    user_id = str(user.id)
+    player = await db.get_player(user_id)
     catches = player.get("catches", {})
 
     if not catches:
@@ -809,6 +825,29 @@ async def do_bag(ctx_or_interaction):
             color=0x8B4513,
         )
         embed.set_footer(text=f"Total unique species: {len(catches)} / {len(SQUIRRELS)}")
+
+    # Show active buffs in bag
+    active_buffs = await db.get_active_buffs(user_id)
+    if active_buffs:
+        buff_lines = []
+        for buff in active_buffs:
+            item = SHOP_ITEMS.get(buff["buff_type"])
+            if not item:
+                continue
+            emoji = item["emoji"]
+            name = item["name"]
+            if buff["charges_left"] is not None:
+                buff_lines.append(f"{emoji} **{name}** — {buff['charges_left']} charges left")
+            elif buff["expires_at"]:
+                remaining = buff["expires_at"] - datetime.now(timezone.utc)
+                if remaining.total_seconds() > 0:
+                    mins = int(remaining.total_seconds() // 60)
+                    hrs = mins // 60
+                    mins = mins % 60
+                    time_str = f"{hrs}h {mins}m" if hrs > 0 else f"{mins}m"
+                    buff_lines.append(f"{emoji} **{name}** — {time_str} remaining")
+        if buff_lines:
+            embed.add_field(name="⚡ Active Buffs", value="\n".join(buff_lines), inline=False)
 
     await _send(ctx_or_interaction, embed)
 
@@ -993,8 +1032,8 @@ async def do_shop_items(ctx_or_interaction):
     user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
     player = await db.get_player(str(user.id))
 
-    embed = _build_shop_embed(player)
-    view = ShopItemsView(page=0)
+    embed = _build_shop_embed(player, category="bait")
+    view = ShopItemsView(player=player, category="bait")
     if is_interaction:
         await ctx_or_interaction.response.edit_message(embed=embed, view=view)
     else:
@@ -1117,8 +1156,10 @@ async def do_buy(ctx_or_interaction, item_key: str):
         await ctx_or_interaction.response.send_message(embed=embed, ephemeral=True)
         # Refresh the shop view on the original message with updated balance
         refreshed_player = await db.get_player(user_id)
-        shop_embed = _build_shop_embed(refreshed_player)
-        await ctx_or_interaction.message.edit(embed=shop_embed, view=ShopItemsView(page=0))
+        # Determine which category the purchased item belongs to
+        cat = _item_category(item_key)
+        shop_embed = _build_shop_embed(refreshed_player, category=cat)
+        await ctx_or_interaction.message.edit(embed=shop_embed, view=ShopItemsView(player=refreshed_player, category=cat))
     else:
         await _send(ctx_or_interaction, embed)
 
