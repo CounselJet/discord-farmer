@@ -148,6 +148,32 @@
     transform: translateY(-1px);
   }
 
+  .nav-donate {
+    background: #E74C3C;
+    color: white !important;
+    padding: 0.55rem 1.3rem;
+    border-radius: 50px;
+    font-weight: 600 !important;
+    transition: background 0.2s, transform 0.2s !important;
+  }
+
+  .nav-donate:hover {
+    background: #C0392B !important;
+    transform: translateY(-1px);
+  }
+
+  .btn-donate {
+    background: #E74C3C;
+    color: white;
+    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.35);
+  }
+
+  .btn-donate:hover {
+    background: #C0392B;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(231, 76, 60, 0.45);
+  }
+
   .mobile-toggle {
     display: none;
     background: none;
@@ -763,6 +789,7 @@
     <li><a href="#commands">Commands</a></li>
     <li><a href="#currency">Currency</a></li>
     <li><a href="https://discord.com/oauth2/authorize?client_id=1475273836424331399&permissions=274877975552&scope=bot" class="nav-cta">Add to Discord</a></li>
+    <li><a href="#donate" class="nav-donate">❤️ Donate</a></li>
   </ul>
   <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">☰</button>
 </nav>
@@ -922,6 +949,7 @@
     <h2>Ready to catch some squirrels?</h2>
     <p>Add Squirrel Catcher to your server and start hunting today.</p>
     <a href="https://discord.com/oauth2/authorize?client_id=1475273836424331399&permissions=274877975552&scope=bot" class="btn btn-primary">🐿️ Add to Discord</a>
+    <a href="#donate" class="btn btn-donate">❤️ Donate</a>
   </div>
 </section>
 
