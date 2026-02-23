@@ -653,6 +653,58 @@
   }
 
   /* ───── Currency ───── */
+  /* Shop items */
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.2rem;
+    margin-top: 2.5rem;
+  }
+
+  .shop-card {
+    text-align: center;
+    padding: 1.8rem 1.2rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    transition: all 0.3s;
+  }
+
+  .shop-card:hover {
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-3px);
+  }
+
+  .shop-emoji { font-size: 2.2rem; margin-bottom: 0.5rem; display: block; }
+  .shop-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .shop-desc {
+    font-size: 0.82rem;
+    color: rgba(255,248,237,0.5);
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+  .shop-cost {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--acorn);
+    background: rgba(198,139,60,0.15);
+    display: inline-block;
+    padding: 0.2rem 0.7rem;
+    border-radius: 6px;
+  }
+  .shop-type {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,248,237,0.35);
+    margin-top: 0.5rem;
+  }
+
   .currency-row {
     display: flex;
     gap: 1.5rem;
@@ -810,6 +862,7 @@
     <li><a href="#features">Features</a></li>
     <li><a href="#squirrels">Squirrels</a></li>
     <li><a href="#commands">Commands</a></li>
+    <li><a href="#shop">Shop</a></li>
     <li><a href="#currency">Currency</a></li>
     <li><a href="https://discord.com/oauth2/authorize?client_id=1475273836424331399&permissions=274877975552&scope=bot" class="nav-cta">Add to Discord</a></li>
     <li><a href="#donate" class="nav-donate">❤️ Donate</a></li>
@@ -933,6 +986,80 @@
       <div class="command-row"><span class="command-code">!sq shop</span><span class="command-desc">Browse buffs, consumables, and upgrades</span></div>
       <div class="command-row"><span class="command-code">!sq buy &lt;item&gt;</span><span class="command-desc">Purchase an item from the shop</span></div>
       <div class="command-row"><span class="command-code">!sq buffs</span><span class="command-desc">View your active buffs and upgrades</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Shop -->
+<section id="shop">
+  <div class="container">
+    <div class="section-label reveal">Buffs & Upgrades</div>
+    <h2 class="section-title reveal">Spend your acorns wisely.</h2>
+    <p class="section-desc reveal">Consumables, permanent upgrades, and auto-catchers — all available via <code>!sq buy &lt;item&gt;</code>.</p>
+    <div class="shop-grid reveal">
+      <div class="shop-card">
+        <span class="shop-emoji">🥜</span>
+        <div class="shop-name">Squirrel Bait</div>
+        <div class="shop-desc">-5% junk chance for 10 catches</div>
+        <span class="shop-cost">200 🌰</span>
+        <div class="shop-type">Consumable</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🍀</span>
+        <div class="shop-name">Lucky Acorn</div>
+        <div class="shop-desc">2x acorn rewards for 30 minutes</div>
+        <span class="shop-cost">1,000 🌰</span>
+        <div class="shop-type">Timed</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">✨</span>
+        <div class="shop-name">Rare Scent</div>
+        <div class="shop-desc">+50% Rare+ drop rate for 20 catches</div>
+        <span class="shop-cost">2,500 🌰</span>
+        <div class="shop-type">Consumable</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🏹</span>
+        <div class="shop-name">Squirrel Hunter</div>
+        <div class="shop-desc">Auto-catch every 30 min for 24 hours</div>
+        <span class="shop-cost">5,000 🌰</span>
+        <div class="shop-type">Auto-Catch</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🥇</span>
+        <div class="shop-name">Golden Bait</div>
+        <div class="shop-desc">-10% junk chance for 20 catches</div>
+        <span class="shop-cost">1 🥈🌰</span>
+        <div class="shop-type">Consumable</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">⚔️</span>
+        <div class="shop-name">Elite Hunter</div>
+        <div class="shop-desc">Auto-catch every 15 min for 24 hours</div>
+        <span class="shop-cost">5 🥈🌰</span>
+        <div class="shop-type">Auto-Catch</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🪤</span>
+        <div class="shop-name">Trap Speed</div>
+        <div class="shop-desc">Permanently reduce catch cooldown (3 tiers)</div>
+        <span class="shop-cost">500 – 10,000 🌰</span>
+        <div class="shop-type">Upgrade</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🛡️</span>
+        <div class="shop-name">Junk Resistance</div>
+        <div class="shop-desc">Permanently reduce junk chance (3 tiers)</div>
+        <span class="shop-cost">1,000 – 20,000 🌰</span>
+        <div class="shop-type">Upgrade</div>
+      </div>
+      <div class="shop-card">
+        <span class="shop-emoji">🧲</span>
+        <div class="shop-name">Acorn Magnet</div>
+        <div class="shop-desc">Permanently boost acorn rewards (3 tiers)</div>
+        <span class="shop-cost">1,500 – 30,000 🌰</span>
+        <div class="shop-type">Upgrade</div>
+      </div>
     </div>
   </div>
 </section>
