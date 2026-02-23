@@ -454,6 +454,45 @@ async def on_ready():
     print(f"   Database: connected")
     await bot.change_presence(activity=discord.Game(name=f"{PREFIX}help | 🐿️"))
 
+
+@bot.event
+async def on_guild_join(guild: discord.Guild):
+    """Send a welcome message with the menu when the bot joins a new server."""
+    # Find the first text channel the bot can send messages in
+    channel = None
+    if guild.system_channel and guild.system_channel.permissions_for(guild.me).send_messages:
+        channel = guild.system_channel
+    else:
+        for ch in guild.text_channels:
+            if ch.permissions_for(guild.me).send_messages:
+                channel = ch
+                break
+
+    if channel is None:
+        return
+
+    embed = discord.Embed(
+        title="🐿️ Squirrel Catcher has arrived!",
+        description=(
+            "Catch squirrels, earn acorns, and compete with your friends!\n\n"
+            "Use the **buttons** below or type commands with `!sq`.\n"
+            "Hit **Catch** to set your first trap!"
+        ),
+        color=0x8B4513,
+    )
+    embed.add_field(
+        name="Quick Start",
+        value=(
+            "🪤 **Catch** — Set a trap\n"
+            "🎒 **Bag** — View your squirrels\n"
+            "💰 **Balance** — Check your acorns\n"
+            "🐿️ **Profile** — See your stats"
+        ),
+        inline=False,
+    )
+    embed.set_footer(text=f"Type {PREFIX}help for all commands")
+    await channel.send(embed=embed, view=MenuView())
+
 # ─── COMMANDS ─────────────────────────────────────────────────────────────────
 
 @bot.command(name="help")
