@@ -253,7 +253,7 @@ class MenuButton(discord.ui.Button):
             "profile": do_profile, "shop": do_shop, "buffs": do_buffs,
             "shop_items": do_shop_items, "shop_upgrades": do_shop_upgrades,
             "daily": do_daily, "bestiary": do_bestiary,
-            "leaderboard": do_leaderboard, "exchange": do_exchange_info,
+            "leaderboard": do_leaderboard, "exchange": do_exchange_view,
             "help": do_help,
         }
         handler = handlers.get(self.action)
@@ -307,8 +307,10 @@ class MenuView(discord.ui.View):
                                      action="balance", custom_id="play:balance", row=1))
             self.add_item(MenuButton(label="Profile", emoji="🐿️", style=discord.ButtonStyle.primary,
                                      action="profile", custom_id="play:profile", row=1))
+            self.add_item(MenuButton(label="Exchange", emoji="🔄", style=discord.ButtonStyle.primary,
+                                     action="exchange", custom_id="play:exchange", row=2))
             self.add_item(discord.ui.Button(label="Donate", style=discord.ButtonStyle.link,
-                                            emoji="💛", url="https://ko-fi.com/squirrelcatcher", row=1))
+                                            emoji="💛", url="https://ko-fi.com/squirrelcatcher", row=2))
         elif page == "shop":
             self.add_item(MenuButton(label="Items", emoji="🛒", style=discord.ButtonStyle.green,
                                      action="shop_items", custom_id="shop:items", row=1))
@@ -323,8 +325,6 @@ class MenuView(discord.ui.View):
                                      action="bestiary", custom_id="info:bestiary", row=1))
             self.add_item(MenuButton(label="Leaderboard", emoji="🏆", style=discord.ButtonStyle.primary,
                                      action="leaderboard", custom_id="info:leaderboard", row=1))
-            self.add_item(MenuButton(label="Exchange", emoji="🔄", style=discord.ButtonStyle.primary,
-                                     action="exchange", custom_id="info:exchange", row=1))
             self.add_item(MenuButton(label="Help", emoji="❓", style=discord.ButtonStyle.primary,
                                      action="help", custom_id="info:help", row=1))
 
@@ -512,6 +512,147 @@ def _build_upgrades_embed(player):
         inline=False,
     )
     return embed
+
+
+# ─── EXCHANGE VIEW ────────────────────────────────────────────────────────────
+
+# (from_currency, to_currency, cost_per_unit, gain_per_unit, emoji_from, emoji_to)
+_EXCHANGE_TIERS = [
+    ("acorns", "silver_acorns", 100, 1, "🌰", "🥈🌰"),
+    ("silver_acorns", "emerald_acorns", 10, 1, "🥈🌰", "💚🌰"),
+    ("emerald_acorns", "golden_acorns", 10, 1, "💚🌰", "✨🌰"),
+]
+
+
+class ExchangeView(discord.ui.View):
+    """View with buttons to exchange currencies (1, 5, 10, All per tier)."""
+    def __init__(self, player):
+        super().__init__(timeout=None)
+        for i, (from_cur, to_cur, cost, gain, emoji_from, emoji_to) in enumerate(_EXCHANGE_TIERS):
+            available = player.get(from_cur, 0)
+            max_units = available // cost
+            for amount in [1, 5, 10, "Max"]:
+                if amount == "Max":
+                    units = max_units
+                    label = f"Max {emoji_from}→{emoji_to}"
+                    cid = f"exchange:{from_cur}_to_{to_cur}_max"
+                else:
+                    units = amount
+                    label = f"{amount} {emoji_to}"
+                    cid = f"exchange:{from_cur}_to_{to_cur}_{amount}"
+                self.add_item(ExchangeButton(
+                    from_currency=from_cur, to_currency=to_cur,
+                    cost_per_unit=cost, gain_per_unit=gain,
+                    emoji_from=emoji_from, emoji_to=emoji_to,
+                    units=units, label=label, custom_id=cid,
+                    disabled=(max_units < (units if amount != "Max" else 1)),
+                    row=i,
+                ))
+        # Row 4: Back
+        self.add_item(BackToPlayMenuButton(row=4))
+
+
+class ExchangeButton(discord.ui.Button):
+    """Button that exchanges a specific number of currency units."""
+    def __init__(self, *, from_currency, to_currency, cost_per_unit, gain_per_unit,
+                 emoji_from, emoji_to, units, label, custom_id, disabled, row):
+        super().__init__(
+            label=label,
+            style=discord.ButtonStyle.green,
+            disabled=disabled,
+            custom_id=custom_id,
+            row=row,
+        )
+        self.from_currency = from_currency
+        self.to_currency = to_currency
+        self.cost_per_unit = cost_per_unit
+        self.gain_per_unit = gain_per_unit
+        self.units = units
+        self.emoji_from = emoji_from
+        self.emoji_to = emoji_to
+
+    async def callback(self, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        player = await db.get_player(user_id)
+
+        available = player.get(self.from_currency, 0)
+        max_units = available // self.cost_per_unit
+        # For "All", self.units was set at view creation; recalculate from live data
+        units = min(self.units, max_units) if self.units > 0 else max_units
+
+        if units < 1:
+            await interaction.response.send_message(
+                f"❌ You need at least **{self.cost_per_unit}** {self.emoji_from} to exchange!",
+                ephemeral=True,
+            )
+            return
+
+        spent = units * self.cost_per_unit
+        gained = units * self.gain_per_unit
+
+        player[self.from_currency] -= spent
+        player[self.to_currency] = player.get(self.to_currency, 0) + gained
+        await db.update_player(user_id, player)
+
+        embed = discord.Embed(
+            title="🔄 Exchange Complete!",
+            description=f"**{spent:,}** {self.emoji_from} → **{gained:,}** {self.emoji_to}",
+            color=0x2ECC71,
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        # Refresh the exchange view with updated balances
+        refreshed_player = await db.get_player(user_id)
+        exchange_embed = _build_exchange_embed(refreshed_player)
+        await interaction.message.edit(embed=exchange_embed, view=ExchangeView(refreshed_player))
+
+
+class BackToPlayMenuButton(discord.ui.Button):
+    """Back button that returns to the play menu page."""
+    def __init__(self, row=4):
+        super().__init__(label="Back", emoji="⬅", style=discord.ButtonStyle.secondary,
+                         custom_id="exchange:back", row=row)
+
+    async def callback(self, interaction: discord.Interaction):
+        embed = await get_page_embed("play", interaction.user)
+        await interaction.response.edit_message(embed=embed, view=MenuView(page="play"))
+
+
+def _build_exchange_embed(player):
+    """Build the exchange embed showing rates and balances."""
+    embed = discord.Embed(title="🔄 Currency Exchange", color=0x3498DB)
+    embed.description = (
+        "Exchange your currencies! Choose an amount to convert.\n\n"
+        "**Rates:**\n"
+        "• 100 🌰 → 1 🥈🌰 Silver Acorn\n"
+        "• 10 🥈🌰 → 1 💚🌰 Emerald Acorn\n"
+        "• 10 💚🌰 → 1 ✨🌰 Golden Acorn"
+    )
+    embed.add_field(
+        name="Your Balance",
+        value=(
+            f"🌰 {player.get('acorns', 0):,} | "
+            f"🥈🌰 {player.get('silver_acorns', 0):,} | "
+            f"💚🌰 {player.get('emerald_acorns', 0):,} | "
+            f"✨🌰 {player.get('golden_acorns', 0):,}"
+        ),
+        inline=False,
+    )
+    return embed
+
+
+async def do_exchange_view(ctx_or_interaction):
+    """Show the exchange view with clickable exchange buttons."""
+    is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
+    user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
+    player = await db.get_player(str(user.id))
+
+    embed = _build_exchange_embed(player)
+    view = ExchangeView(player)
+    if is_interaction:
+        await ctx_or_interaction.response.edit_message(embed=embed, view=view)
+    else:
+        await ctx_or_interaction.send(embed=embed, view=view)
 
 
 async def _send(ctx_or_interaction, embed, view=None, ephemeral=False):
