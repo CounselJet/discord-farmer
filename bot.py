@@ -429,7 +429,7 @@ async def do_catch(ctx_or_interaction):
         player["xp"] += xp_gain.get(sq_rarity, 5)
 
         embed = discord.Embed(
-            title=f"{sq_emoji} You caught a {sq_name}!",
+            title=f"{sq_emoji} {user.display_name} caught a {sq_name}!",
             description=f"**Rarity:** {sq_rarity}\n**Reward:** {acorns} 🌰",
             color=RARITY_COLORS.get(sq_rarity, 0x808080),
         )
