@@ -111,29 +111,65 @@ JUNK_CATCHES = [
 SHOP_ITEMS = {
     "better_trap": {"name": "Better Trap", "emoji": "🪤", "cost": 500, "currency": "acorns",
                      "description": "-2s catch cooldown", "type": "upgrade", "upgrade_key": "trap_tier"},
-    "squirrel_bait": {"name": "Squirrel Bait", "emoji": "🥜", "cost": 200, "currency": "acorns",
-                       "description": "-5% junk chance (10 catches)", "type": "consumable", "charges": 10},
-    "lucky_acorn": {"name": "Lucky Acorn", "emoji": "🍀", "cost": 1000, "currency": "acorns",
-                     "description": "2x acorn rewards (30 min)", "type": "timed", "duration_minutes": 30},
-    "rare_scent": {"name": "Rare Scent", "emoji": "✨", "cost": 2500, "currency": "acorns",
-                    "description": "+50% Rare+ drop rate (20 catches)", "type": "consumable", "charges": 20},
-    "squirrel_hunter": {"name": "Squirrel Hunter", "emoji": "🏹", "cost": 5000, "currency": "acorns",
+    # ── Bait — Junk Reduction ──
+    "peanut_butter_trap": {"name": "Peanut Butter Trap", "emoji": "🥜", "cost": 150, "currency": "acorns",
+                            "description": "-3% junk chance (5 catches)", "type": "consumable", "charges": 5},
+    "squirrel_bait": {"name": "Squirrel Bait", "emoji": "🥜", "cost": 500, "currency": "acorns",
+                       "description": "-5% junk chance (8 catches)", "type": "consumable", "charges": 8},
+    "premium_nuts": {"name": "Premium Nuts", "emoji": "🌰", "cost": 1500, "currency": "acorns",
+                      "description": "-8% junk chance (10 catches)", "type": "consumable", "charges": 10},
+    "golden_bait": {"name": "Golden Bait", "emoji": "🥇", "cost": 3, "currency": "silver_acorns",
+                     "description": "-10% junk chance (12 catches)", "type": "consumable", "charges": 12},
+    "honey_trap": {"name": "Honey Trap", "emoji": "🍯", "cost": 8, "currency": "silver_acorns",
+                    "description": "-15% junk chance (8 catches)", "type": "consumable", "charges": 8},
+    "perfect_bait": {"name": "Perfect Bait", "emoji": "💎", "cost": 3, "currency": "emerald_acorns",
+                      "description": "No junk catches (3 charges)", "type": "consumable", "charges": 3},
+    # ── Bait — Rarity Attraction ──
+    "shiny_acorn_bait": {"name": "Shiny Acorn Bait", "emoji": "✨", "cost": 1200, "currency": "acorns",
+                          "description": "+25% Rare+ drop rate (8 catches)", "type": "consumable", "charges": 8},
+    "rainbow_bait": {"name": "Rainbow Bait", "emoji": "🌈", "cost": 10000, "currency": "acorns",
+                      "description": "+30% Rare+ & -5% junk (8 catches)", "type": "consumable", "charges": 8},
+    "rare_scent": {"name": "Rare Scent", "emoji": "✨", "cost": 6000, "currency": "acorns",
+                    "description": "+50% Rare+ drop rate (12 catches)", "type": "consumable", "charges": 12},
+    "exotic_nectar": {"name": "Exotic Nectar", "emoji": "🌺", "cost": 8000, "currency": "acorns",
+                       "description": "+50% Epic+ drop rate (6 catches)", "type": "consumable", "charges": 6},
+    "mythic_truffle": {"name": "Mythic Truffle", "emoji": "🍄", "cost": 15, "currency": "silver_acorns",
+                        "description": "+200% Mythic drop rate (3 catches)", "type": "consumable", "charges": 3},
+    # ── Buffs ──
+    "lucky_acorn": {"name": "Lucky Acorn", "emoji": "🍀", "cost": 3000, "currency": "acorns",
+                     "description": "2x acorn rewards (20 min)", "type": "timed", "duration_minutes": 20},
+    "scholars_cap": {"name": "Scholar's Cap", "emoji": "🎓", "cost": 800, "currency": "acorns",
+                      "description": "2x XP (15 catches)", "type": "consumable", "charges": 15},
+    "xp_potion": {"name": "XP Potion", "emoji": "🧪", "cost": 4000, "currency": "acorns",
+                   "description": "3x XP (20 min)", "type": "timed", "duration_minutes": 20},
+    "acorn_storm": {"name": "Acorn Storm", "emoji": "⛈️", "cost": 5, "currency": "silver_acorns",
+                     "description": "3x acorn rewards (10 min)", "type": "timed", "duration_minutes": 10},
+    "silver_shimmer": {"name": "Silver Shimmer", "emoji": "🪙", "cost": 4000, "currency": "acorns",
+                        "description": "10% chance bonus 🥈🌰 (12 catches)", "type": "consumable", "charges": 12},
+    "treasure_map": {"name": "Treasure Map", "emoji": "🗺️", "cost": 8000, "currency": "acorns",
+                      "description": "+50% sell value (20 min)", "type": "timed", "duration_minutes": 20},
+    # ── Helpers ──
+    "squirrel_hunter": {"name": "Squirrel Hunter", "emoji": "🏹", "cost": 15000, "currency": "acorns",
                          "description": "Auto-catch every 30 min (24h)", "type": "auto_catch",
                          "interval_minutes": 30, "duration_hours": 24},
-    "golden_bait": {"name": "Golden Bait", "emoji": "🥇", "cost": 1, "currency": "silver_acorns",
-                     "description": "-10% junk chance (20 catches)", "type": "consumable", "charges": 20},
-    "elite_hunter": {"name": "Elite Hunter", "emoji": "⚔️", "cost": 5, "currency": "silver_acorns",
+    "scout_squirrel": {"name": "Scout Squirrel", "emoji": "🐿️", "cost": 6000, "currency": "acorns",
+                        "description": "Auto-catch every 60 min (48h)", "type": "auto_catch",
+                        "interval_minutes": 60, "duration_hours": 48},
+    "elite_hunter": {"name": "Elite Hunter", "emoji": "⚔️", "cost": 15, "currency": "silver_acorns",
                       "description": "Auto-catch every 15 min (24h)", "type": "auto_catch",
                       "interval_minutes": 15, "duration_hours": 24},
+    "master_hunter": {"name": "Master Hunter", "emoji": "🦅", "cost": 25, "currency": "silver_acorns",
+                       "description": "Auto-catch every 10 min (12h)", "type": "auto_catch",
+                       "interval_minutes": 10, "duration_hours": 12},
 }
 
 UPGRADE_TIERS = {
     "trap_tier": {"name": "Trap Speed", "max": 3,
-                   "tiers": [{"cost": 500, "label": "3s cooldown"}, {"cost": 2000, "label": "2.5s cooldown"}, {"cost": 10000, "label": "2s cooldown"}]},
+                   "tiers": [{"cost": 2000, "label": "3s cooldown"}, {"cost": 10000, "label": "2.5s cooldown"}, {"cost": 40000, "label": "2s cooldown"}]},
     "junk_resist_tier": {"name": "Junk Resistance", "max": 3,
-                          "tiers": [{"cost": 1000, "label": "-3% junk"}, {"cost": 5000, "label": "-5% junk"}, {"cost": 20000, "label": "-8% junk"}]},
+                          "tiers": [{"cost": 3000, "label": "-3% junk"}, {"cost": 15000, "label": "-5% junk"}, {"cost": 60000, "label": "-8% junk"}]},
     "acorn_magnet_tier": {"name": "Acorn Magnet", "max": 3,
-                           "tiers": [{"cost": 1500, "label": "+5% acorns"}, {"cost": 7500, "label": "+10% acorns"}, {"cost": 30000, "label": "+15% acorns"}]},
+                           "tiers": [{"cost": 5000, "label": "+5% acorns"}, {"cost": 25000, "label": "+10% acorns"}, {"cost": 80000, "label": "+15% acorns"}]},
 }
 
 TRAP_COOLDOWNS = [3.5, 3, 2.5, 2]  # index = trap_tier
@@ -164,11 +200,14 @@ def check_level_up(player: dict) -> bool:
 # ─── CATCH LOGIC ──────────────────────────────────────────────────────────────
 
 def roll_catch(player_level: int, junk_resist_tier: int = 0,
-               bait_junk_reduction: int = 0, has_rare_scent: bool = False) -> tuple:
+               bait_junk_reduction: int = 0,
+               rare_bonus: int = 0, epic_bonus: int = 0, mythic_bonus: int = 0) -> tuple:
     """Returns either a squirrel tuple or a junk tuple.
     junk_resist_tier: permanent junk reduction tier (0-3)
     bait_junk_reduction: temporary junk % reduction from bait buffs
-    has_rare_scent: whether rare_scent buff is active
+    rare_bonus: % boost to Rare+ squirrels
+    epic_bonus: % boost to Epic+ squirrels
+    mythic_bonus: % boost to Mythic squirrels
     """
     # 30% chance of junk, decreasing slightly with level
     junk_chance = max(5, 30 - player_level - JUNK_RESIST_BONUSES[junk_resist_tier] - bait_junk_reduction)
@@ -178,13 +217,18 @@ def roll_catch(player_level: int, junk_resist_tier: int = 0,
     # Weighted random squirrel selection
     # Higher level = slightly better luck
     level_bonus = min(player_level * 0.5, 10)  # up to +10% at high levels
-    scent_bonus = 50 if has_rare_scent else 0   # +50% from rare scent buff
     weights = []
     for sq in SQUIRRELS:
         w = sq[5]
-        # Boost rare+ squirrels based on level and buffs
-        if sq[2] in ("Rare", "Epic", "Legendary", "Mythic"):
-            w *= (1 + (level_bonus + scent_bonus) / 100)
+        rarity = sq[2]
+        if rarity == "Rare":
+            w *= (1 + (level_bonus + rare_bonus) / 100)
+        elif rarity == "Epic":
+            w *= (1 + (level_bonus + rare_bonus + epic_bonus) / 100)
+        elif rarity == "Legendary":
+            w *= (1 + (level_bonus + rare_bonus + epic_bonus) / 100)
+        elif rarity == "Mythic":
+            w *= (1 + (level_bonus + rare_bonus + epic_bonus + mythic_bonus) / 100)
         weights.append(w)
 
     chosen = random.choices(SQUIRRELS, weights=weights, k=1)[0]
@@ -224,7 +268,7 @@ async def get_page_embed(page, user):
         )
         embed.add_field(
             name="Your Balance",
-            value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,}",
+            value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,} | 💚🌰 {player.get('emerald_acorns', 0):,}",
             inline=False,
         )
         return embed
@@ -334,9 +378,16 @@ class MenuView(discord.ui.View):
 
 # Shop item categories
 _SHOP_CATEGORIES = {
-    "bait":    {"label": "Bait",    "emoji": "🥜", "keys": ["squirrel_bait", "golden_bait"]},
-    "buffs":   {"label": "Buffs",   "emoji": "🍀", "keys": ["lucky_acorn", "rare_scent"]},
-    "helpers": {"label": "Helpers", "emoji": "🏹", "keys": ["squirrel_hunter", "elite_hunter"]},
+    "bait":    {"label": "Bait",    "emoji": "🥜", "keys": [
+        "peanut_butter_trap", "squirrel_bait", "premium_nuts", "golden_bait", "honey_trap", "perfect_bait",
+        "shiny_acorn_bait", "rainbow_bait", "rare_scent", "exotic_nectar", "mythic_truffle",
+    ]},
+    "buffs":   {"label": "Buffs",   "emoji": "🍀", "keys": [
+        "lucky_acorn", "scholars_cap", "xp_potion", "acorn_storm", "silver_shimmer", "treasure_map",
+    ]},
+    "helpers": {"label": "Helpers", "emoji": "🏹", "keys": [
+        "scout_squirrel", "squirrel_hunter", "elite_hunter", "master_hunter",
+    ]},
 }
 _SHOP_CONSUMABLE_KEYS = [k for k, v in SHOP_ITEMS.items() if v["type"] != "upgrade"]
 
@@ -387,10 +438,10 @@ class ShopItemsView(discord.ui.View):
                 is_current=(cat_key == category), row=0,
             ))
 
-        # Rows 1-2: Buy buttons for items in selected category
+        # Rows 1-3: Buy buttons for items in selected category (4 per row)
         cat_keys = _SHOP_CATEGORIES[category]["keys"]
         for i, key in enumerate(cat_keys):
-            self.add_item(BuyButton(key, player=player, row=1 + i // 3))
+            self.add_item(BuyButton(key, player=player, row=1 + i // 4))
 
         # Row 4: Back button
         self.add_item(BackToShopMenuButton(row=4))
@@ -497,7 +548,7 @@ def _build_shop_embed(player, category=None):
     embed.add_field(name="Items", value="\n".join(item_lines), inline=False)
     embed.add_field(
         name="Your Balance",
-        value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,}",
+        value=f"🌰 {player.get('acorns', 0):,} | 🥈🌰 {player.get('silver_acorns', 0):,} | 💚🌰 {player.get('emerald_acorns', 0):,}",
         inline=False,
     )
     return embed
@@ -707,24 +758,66 @@ async def do_catch(ctx_or_interaction):
     # Gather active buffs
     active_buffs = await db.get_active_buffs(user_id)
     bait_junk_reduction = 0
-    bait_buff_id = None
-    has_rare_scent = False
-    rare_scent_buff_id = None
-    has_lucky_acorn = False
+    rare_bonus = 0
+    epic_bonus = 0
+    mythic_bonus = 0
+    xp_multiplier = 1
+    acorn_multiplier = 1
+    has_silver_shimmer = False
+    has_treasure_map = False
+    charge_buff_ids = []  # (buff_id, buff_type) for charge-based buffs to consume
 
     for buff in active_buffs:
         bt = buff["buff_type"]
-        if bt == "squirrel_bait":
-            bait_junk_reduction = 5
-            bait_buff_id = buff["id"]
+        bid = buff["id"]
+        if bt == "peanut_butter_trap":
+            bait_junk_reduction = max(bait_junk_reduction, 3)
+            charge_buff_ids.append(bid)
+        elif bt == "squirrel_bait":
+            bait_junk_reduction = max(bait_junk_reduction, 5)
+            charge_buff_ids.append(bid)
+        elif bt == "premium_nuts":
+            bait_junk_reduction = max(bait_junk_reduction, 8)
+            charge_buff_ids.append(bid)
         elif bt == "golden_bait":
-            bait_junk_reduction = 10
-            bait_buff_id = buff["id"]
+            bait_junk_reduction = max(bait_junk_reduction, 10)
+            charge_buff_ids.append(bid)
+        elif bt == "honey_trap":
+            bait_junk_reduction = max(bait_junk_reduction, 15)
+            charge_buff_ids.append(bid)
+        elif bt == "perfect_bait":
+            bait_junk_reduction = 100
+            charge_buff_ids.append(bid)
+        elif bt == "shiny_acorn_bait":
+            rare_bonus = max(rare_bonus, 25)
+            charge_buff_ids.append(bid)
+        elif bt == "rainbow_bait":
+            rare_bonus = max(rare_bonus, 30)
+            bait_junk_reduction = max(bait_junk_reduction, 5)
+            charge_buff_ids.append(bid)
         elif bt == "rare_scent":
-            has_rare_scent = True
-            rare_scent_buff_id = buff["id"]
+            rare_bonus = max(rare_bonus, 50)
+            charge_buff_ids.append(bid)
+        elif bt == "exotic_nectar":
+            epic_bonus = max(epic_bonus, 50)
+            charge_buff_ids.append(bid)
+        elif bt == "mythic_truffle":
+            mythic_bonus = max(mythic_bonus, 200)
+            charge_buff_ids.append(bid)
         elif bt == "lucky_acorn":
-            has_lucky_acorn = True
+            acorn_multiplier = max(acorn_multiplier, 2)
+        elif bt == "scholars_cap":
+            xp_multiplier = max(xp_multiplier, 2)
+            charge_buff_ids.append(bid)
+        elif bt == "xp_potion":
+            xp_multiplier = max(xp_multiplier, 3)
+        elif bt == "acorn_storm":
+            acorn_multiplier = max(acorn_multiplier, 3)
+        elif bt == "silver_shimmer":
+            has_silver_shimmer = True
+            charge_buff_ids.append(bid)
+        elif bt == "treasure_map":
+            has_treasure_map = True
 
     # Suspense message
     if is_interaction:
@@ -735,19 +828,17 @@ async def do_catch(ctx_or_interaction):
     await asyncio.sleep(1.5)
 
     result = roll_catch(player["level"], player.get("junk_resist_tier", 0),
-                        bait_junk_reduction, has_rare_scent)
+                        bait_junk_reduction, rare_bonus, epic_bonus, mythic_bonus)
 
     # Consume charge-based buffs that were used
-    if bait_buff_id is not None:
-        await db.consume_buff_charge(bait_buff_id)
-    if rare_scent_buff_id is not None:
-        await db.consume_buff_charge(rare_scent_buff_id)
+    for bid in charge_buff_ids:
+        await db.consume_buff_charge(bid)
 
     if result[0] == "junk":
         _, (junk_name, junk_emoji, junk_acorns) = result
         player["junk_catches"] += 1
         player["acorns"] += junk_acorns
-        player["xp"] += 1
+        player["xp"] += 1 * xp_multiplier
 
         embed = discord.Embed(
             title=f"{junk_emoji} You caught... {junk_name}!",
@@ -761,15 +852,14 @@ async def do_catch(ctx_or_interaction):
         # Apply acorn bonuses
         magnet_bonus = ACORN_MAGNET_BONUSES[player.get("acorn_magnet_tier", 0)]
         acorns = int(acorns * (1 + magnet_bonus / 100))
-        if has_lucky_acorn:
-            acorns *= 2
+        acorns *= acorn_multiplier
 
         player["acorns"] += acorns
         player["total_catches"] += 1
         player["catches"][sq_name] = player["catches"].get(sq_name, 0) + 1
 
         xp_gain = {"Common": 5, "Uncommon": 10, "Rare": 20, "Epic": 40, "Legendary": 80, "Mythic": 200}
-        player["xp"] += xp_gain.get(sq_rarity, 5)
+        player["xp"] += xp_gain.get(sq_rarity, 5) * xp_multiplier
 
         embed = discord.Embed(
             title=f"{sq_emoji} {user.display_name} caught a {sq_name}!",
@@ -781,8 +871,19 @@ async def do_catch(ctx_or_interaction):
         file = discord.File(image_path, filename=sq_image)
         embed.set_thumbnail(url=f"attachment://{sq_image}")
 
-        if has_lucky_acorn:
-            embed.description += " (2x Lucky Acorn!)"
+        bonus_notes = []
+        if acorn_multiplier > 1:
+            bonus_notes.append(f"{acorn_multiplier}x Acorns!")
+        if xp_multiplier > 1:
+            bonus_notes.append(f"{xp_multiplier}x XP!")
+        if bonus_notes:
+            embed.description += f" ({' | '.join(bonus_notes)})"
+
+        # Silver shimmer: 10% chance for bonus silver acorn
+        if has_silver_shimmer and random.random() < 0.10:
+            player["silver_acorns"] = player.get("silver_acorns", 0) + 1
+            embed.description += "\n🪙 **Silver Shimmer!** +1 🥈🌰"
+
         if sq_rarity in ("Epic", "Legendary", "Mythic"):
             embed.set_footer(text=f"🎉 Wow! A {sq_rarity} catch!")
 
@@ -1241,7 +1342,7 @@ async def auto_catch_tick():
         user_id = buff["user_id"]
         player = await db.get_player(user_id)
 
-        result = roll_catch(player["level"], player.get("junk_resist_tier", 0))
+        result = roll_catch(player["level"], player.get("junk_resist_tier", 0), 0, 0, 0, 0)
 
         if result[0] == "junk":
             _, (junk_name, junk_emoji, junk_acorns) = result
@@ -1296,7 +1397,7 @@ async def _check_expired_auto_catch():
             rows = await conn.fetch(
                 """
                 SELECT * FROM player_buffs
-                WHERE buff_type IN ('squirrel_hunter', 'elite_hunter')
+                WHERE buff_type IN ('squirrel_hunter', 'elite_hunter', 'scout_squirrel', 'master_hunter')
                   AND expires_at IS NOT NULL AND expires_at <= NOW()
                   AND channel_id IS NOT NULL
                 """
@@ -1527,13 +1628,21 @@ async def sell_cmd(ctx, *, squirrel_name: str = ""):
 
     # Sell value = average of min/max acorn range
     sell_value = (match[3] + match[4]) // 2
+
+    # Check for treasure map buff (+50% sell value)
+    active_buffs = await db.get_active_buffs(user_id)
+    has_treasure_map = any(b["buff_type"] == "treasure_map" for b in active_buffs)
+    if has_treasure_map:
+        sell_value = int(sell_value * 1.5)
+
     player["catches"][sq_name] -= 1
     if player["catches"][sq_name] == 0:
         del player["catches"][sq_name]
     player["acorns"] += sell_value
     await db.update_player(user_id, player)
 
-    await ctx.send(f"💰 Sold **{sq_name}** for **{sell_value}** 🌰 acorns!")
+    bonus = " (🗺️ +50% Treasure Map!)" if has_treasure_map else ""
+    await ctx.send(f"💰 Sold **{sq_name}** for **{sell_value}** 🌰 acorns!{bonus}")
 
 
 @bot.command(name="daily")
