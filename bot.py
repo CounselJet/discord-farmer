@@ -43,43 +43,43 @@ EXCHANGE_RATES = {
 # ─── SQUIRREL DATA ───────────────────────────────────────────────────────────
 
 SQUIRRELS = [
-    # (name, emoji, rarity, min_acorns, max_acorns, weight_chance)
+    # (name, emoji, rarity, min_acorns, max_acorns, weight_chance, image)
     # ── Common (~78%) ──
-    ("Grey Squirrel", "🐿️", "Common", 1, 5, 40),
-    ("Red Squirrel", "🐿️", "Common", 2, 8, 35),
-    ("Chipmunk", "🐿️", "Common", 1, 4, 38),
-    ("Eastern Squirrel", "🌳🐿️", "Common", 2, 6, 32),
-    ("Park Squirrel", "🏞️🐿️", "Common", 1, 5, 30),
-    ("Acorn Hoarder", "🌰🐿️", "Common", 3, 7, 28),
-    ("Bushy Tail", "🍂🐿️", "Common", 2, 6, 25),
-    ("Tiny Squirrel", "🐾🐿️", "Common", 1, 3, 35),
+    ("Grey Squirrel", "🐿️", "Common", 1, 5, 40, "common_grey.jpg"),
+    ("Red Squirrel", "🐿️", "Common", 2, 8, 35, "red_squirrel.jpg"),
+    ("Chipmunk", "🐿️", "Common", 1, 4, 38, "chipmunk.jpg"),
+    ("Eastern Squirrel", "🌳🐿️", "Common", 2, 6, 32, "eastern_squirrel.jpg"),
+    ("Park Squirrel", "🏞️🐿️", "Common", 1, 5, 30, "park_squirrel.jpg"),
+    ("Acorn Hoarder", "🌰🐿️", "Common", 3, 7, 28, "acorn_hoarder.jpg"),
+    ("Bushy Tail", "🍂🐿️", "Common", 2, 6, 25, "bushy_tail.jpg"),
+    ("Tiny Squirrel", "🐾🐿️", "Common", 1, 3, 35, "baby_squirrel.jpg"),
     # ── Uncommon (~20%) ──
-    ("Black Squirrel", "🖤🐿️", "Uncommon", 5, 15, 12),
-    ("White Squirrel", "🤍🐿️", "Uncommon", 8, 20, 8),
-    ("Fox Squirrel", "🦊🐿️", "Uncommon", 6, 18, 10),
-    ("Striped Squirrel", "🦝🐿️", "Uncommon", 7, 16, 9),
-    ("Pine Squirrel", "🌲🐿️", "Uncommon", 5, 14, 11),
-    ("Marsh Squirrel", "🌿🐿️", "Uncommon", 6, 15, 8),
-    ("Cinnamon Squirrel", "🟤🐿️", "Uncommon", 7, 17, 9),
+    ("Black Squirrel", "🖤🐿️", "Uncommon", 5, 15, 12, "black_squirrel.jpg"),
+    ("White Squirrel", "🤍🐿️", "Uncommon", 8, 20, 8, "white_squirrel.jpg"),
+    ("Fox Squirrel", "🦊🐿️", "Uncommon", 6, 18, 10, "fox_squirrel.jpg"),
+    ("Striped Squirrel", "🦝🐿️", "Uncommon", 7, 16, 9, "striped_squirrel.jpg"),
+    ("Pine Squirrel", "🌲🐿️", "Uncommon", 5, 14, 11, "pine_squirrel.jpg"),
+    ("Marsh Squirrel", "🌿🐿️", "Uncommon", 6, 15, 8, "marsh_squirrel.jpg"),
+    ("Cinnamon Squirrel", "🟤🐿️", "Uncommon", 7, 17, 9, "cinnimon_Squirrel.jpg"),
     # ── Rare (~2%) ──
-    ("Flying Squirrel", "🪂🐿️", "Rare", 15, 40, 1.5),
-    ("Albino Squirrel", "👻🐿️", "Rare", 20, 50, 1.2),
-    ("Giant Squirrel", "💪🐿️", "Rare", 25, 60, 1.0),
-    ("Arctic Squirrel", "❄️🐿️", "Rare", 18, 45, 1.3),
-    ("Clockwork Squirrel", "⚙️🐿️", "Rare", 22, 55, 0.8),
-    ("Jungle Squirrel", "🌴🐿️", "Rare", 20, 48, 1.0),
+    ("Flying Squirrel", "🪂🐿️", "Rare", 15, 40, 1.5, "flying_squirrel.jpg"),
+    ("Albino Squirrel", "👻🐿️", "Rare", 20, 50, 1.2, "albino_squirrel.jpg"),
+    ("Giant Squirrel", "💪🐿️", "Rare", 25, 60, 1.0, "giant_squirrel.jpg"),
+    ("Arctic Squirrel", "❄️🐿️", "Rare", 18, 45, 1.3, "artctic_squirrel.jpg"),
+    ("Clockwork Squirrel", "⚙️🐿️", "Rare", 22, 55, 0.8, "clockwork_squirrel.jpg"),
+    ("Jungle Squirrel", "🌴🐿️", "Rare", 20, 48, 1.0, "jungle_squirrel.jpg"),
     # ── Epic (~0.25%) ──
-    ("Crystal Squirrel", "💎🐿️", "Epic", 50, 120, 0.25),
-    ("Shadow Squirrel", "🌑🐿️", "Epic", 60, 150, 0.20),
-    ("Phoenix Squirrel", "🔥🐿️", "Epic", 55, 130, 0.22),
-    ("Storm Squirrel", "⛈️🐿️", "Epic", 65, 140, 0.18),
+    ("Crystal Squirrel", "💎🐿️", "Epic", 50, 120, 0.25, "crystal_squirrel.jpg"),
+    ("Shadow Squirrel", "🌑🐿️", "Epic", 60, 150, 0.20, "shadow_squirrel.jpg"),
+    ("Phoenix Squirrel", "🔥🐿️", "Epic", 55, 130, 0.22, "pheonix_squirrel.jpg"),
+    ("Storm Squirrel", "⛈️🐿️", "Epic", 65, 140, 0.18, "storm_squirrel.jpg"),
     # ── Legendary (~0.03%) ──
-    ("Golden Squirrel", "👑🐿️", "Legendary", 150, 400, 0.04),
-    ("Cosmic Squirrel", "🌌🐿️", "Legendary", 200, 500, 0.03),
-    ("Void Squirrel", "🕳️🐿️", "Legendary", 180, 450, 0.035),
+    ("Golden Squirrel", "👑🐿️", "Legendary", 150, 400, 0.04, "golden_squirrel.jpg"),
+    ("Cosmic Squirrel", "🌌🐿️", "Legendary", 200, 500, 0.03, "cosmic_squirrel.jpg"),
+    ("Void Squirrel", "🕳️🐿️", "Legendary", 180, 450, 0.035, "void_squirrel.jpg"),
     # ── Mythic (~0.004%) ──
-    ("Mythic Nutcracker", "⚡🐿️", "Mythic", 500, 1200, 0.008),
-    ("Celestial Squirrel", "✨🐿️", "Mythic", 600, 1500, 0.005),
+    ("Mythic Nutcracker", "⚡🐿️", "Mythic", 500, 1200, 0.008, "mythic_nutcracker.jpg"),
+    ("Celestial Squirrel", "✨🐿️", "Mythic", 600, 1500, 0.005, "celestial_squirrel.jpg"),
 ]
 
 RARITY_COLORS = {
@@ -136,7 +136,7 @@ UPGRADE_TIERS = {
                            "tiers": [{"cost": 1500, "label": "+5% acorns"}, {"cost": 7500, "label": "+10% acorns"}, {"cost": 30000, "label": "+15% acorns"}]},
 }
 
-TRAP_COOLDOWNS = [10, 8, 6, 5]  # index = trap_tier
+TRAP_COOLDOWNS = [3.5, 3, 2.5, 2]  # index = trap_tier
 JUNK_RESIST_BONUSES = [0, 3, 5, 8]  # index = junk_resist_tier
 ACORN_MAGNET_BONUSES = [0, 5, 10, 15]  # index = acorn_magnet_tier
 
@@ -413,7 +413,7 @@ async def do_catch(ctx_or_interaction):
         )
     else:
         _, squirrel, acorns = result
-        sq_name, sq_emoji, sq_rarity, _, _, _ = squirrel
+        sq_name, sq_emoji, sq_rarity, _, _, _, sq_image = squirrel
 
         # Apply acorn bonuses
         magnet_bonus = ACORN_MAGNET_BONUSES[player.get("acorn_magnet_tier", 0)]
@@ -434,6 +434,10 @@ async def do_catch(ctx_or_interaction):
             color=RARITY_COLORS.get(sq_rarity, 0x808080),
         )
 
+        image_path = f"assets/{sq_image}"
+        file = discord.File(image_path, filename=sq_image)
+        embed.set_thumbnail(url=f"attachment://{sq_image}")
+
         if has_lucky_acorn:
             embed.description += " (2x Lucky Acorn!)"
         if sq_rarity in ("Epic", "Legendary", "Mythic"):
@@ -446,7 +450,10 @@ async def do_catch(ctx_or_interaction):
     await db.update_player(user_id, player)
     iid = getattr(ctx_or_interaction, 'id', None)
     page = _interaction_pages.pop(iid, 'play') if iid else 'play'
-    await msg.edit(content=None, embed=embed, view=MenuView(page=page))
+    if result[0] == "squirrel":
+        await msg.edit(content=None, embed=embed, view=MenuView(page=page), attachments=[file])
+    else:
+        await msg.edit(content=None, embed=embed, view=MenuView(page=page))
 
 
 async def do_bag(ctx_or_interaction):
@@ -563,7 +570,7 @@ async def do_bestiary(ctx_or_interaction):
 
     lines = []
     for sq in SQUIRRELS:
-        name, emoji, rarity, _, _, _ = sq
+        name, emoji, rarity, _, _, _, _ = sq
         if name in catches:
             lines.append(f"{emoji} **{name}** — {rarity} ✅ (x{catches[name]})")
         else:
@@ -858,7 +865,7 @@ async def auto_catch_tick():
             player["xp"] += 1
         else:
             _, squirrel, acorns = result
-            sq_name, sq_emoji, sq_rarity, _, _, _ = squirrel
+            sq_name, sq_emoji, sq_rarity, _, _, _, _ = squirrel
             magnet_bonus = ACORN_MAGNET_BONUSES[player.get("acorn_magnet_tier", 0)]
             acorns = int(acorns * (1 + magnet_bonus / 100))
             player["acorns"] += acorns

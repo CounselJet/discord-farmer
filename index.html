@@ -554,7 +554,13 @@
     transform: translateY(-3px);
   }
 
-  .squirrel-card .emoji { font-size: 2rem; margin-bottom: 0.6rem; display: block; }
+  .squirrel-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+  }
   .squirrel-card .name {
     font-family: var(--font-display);
     font-weight: 600;
@@ -971,41 +977,41 @@
   // ─── Squirrel Data ───
   const squirrels = [
     // Common
-    { name: "Grey Squirrel", emoji: "🐿️", rarity: "Common", reward: "1–5", xp: 5 },
-    { name: "Red Squirrel", emoji: "🐿️", rarity: "Common", reward: "2–8", xp: 5 },
-    { name: "Chipmunk", emoji: "🐿️", rarity: "Common", reward: "1–4", xp: 5 },
-    { name: "Eastern Squirrel", emoji: "🌳🐿️", rarity: "Common", reward: "2–6", xp: 5 },
-    { name: "Park Squirrel", emoji: "🏞️🐿️", rarity: "Common", reward: "1–5", xp: 5 },
-    { name: "Acorn Hoarder", emoji: "🌰🐿️", rarity: "Common", reward: "3–7", xp: 5 },
-    { name: "Bushy Tail", emoji: "🍂🐿️", rarity: "Common", reward: "2–6", xp: 5 },
-    { name: "Tiny Squirrel", emoji: "🐾🐿️", rarity: "Common", reward: "1–3", xp: 5 },
+    { name: "Grey Squirrel", emoji: "🐿️", rarity: "Common", reward: "1–5", xp: 5, image: "assets/common_grey.jpg" },
+    { name: "Red Squirrel", emoji: "🐿️", rarity: "Common", reward: "2–8", xp: 5, image: "assets/red_squirrel.jpg" },
+    { name: "Chipmunk", emoji: "🐿️", rarity: "Common", reward: "1–4", xp: 5, image: "assets/chipmunk.jpg" },
+    { name: "Eastern Squirrel", emoji: "🌳🐿️", rarity: "Common", reward: "2–6", xp: 5, image: "assets/eastern_squirrel.jpg" },
+    { name: "Park Squirrel", emoji: "🏞️🐿️", rarity: "Common", reward: "1–5", xp: 5, image: "assets/park_squirrel.jpg" },
+    { name: "Acorn Hoarder", emoji: "🌰🐿️", rarity: "Common", reward: "3–7", xp: 5, image: "assets/acorn_hoarder.jpg" },
+    { name: "Bushy Tail", emoji: "🍂🐿️", rarity: "Common", reward: "2–6", xp: 5, image: "assets/bushy_tail.jpg" },
+    { name: "Tiny Squirrel", emoji: "🐾🐿️", rarity: "Common", reward: "1–3", xp: 5, image: "assets/baby_squirrel.jpg" },
     // Uncommon
-    { name: "Black Squirrel", emoji: "🖤🐿️", rarity: "Uncommon", reward: "5–15", xp: 10 },
-    { name: "White Squirrel", emoji: "🤍🐿️", rarity: "Uncommon", reward: "8–20", xp: 10 },
-    { name: "Fox Squirrel", emoji: "🦊🐿️", rarity: "Uncommon", reward: "6–18", xp: 10 },
-    { name: "Striped Squirrel", emoji: "🦝🐿️", rarity: "Uncommon", reward: "7–16", xp: 10 },
-    { name: "Pine Squirrel", emoji: "🌲🐿️", rarity: "Uncommon", reward: "5–14", xp: 10 },
-    { name: "Marsh Squirrel", emoji: "🌿🐿️", rarity: "Uncommon", reward: "6–15", xp: 10 },
-    { name: "Cinnamon Squirrel", emoji: "🟤🐿️", rarity: "Uncommon", reward: "7–17", xp: 10 },
+    { name: "Black Squirrel", emoji: "🖤🐿️", rarity: "Uncommon", reward: "5–15", xp: 10, image: "assets/black_squirrel.jpg" },
+    { name: "White Squirrel", emoji: "🤍🐿️", rarity: "Uncommon", reward: "8–20", xp: 10, image: "assets/white_squirrel.jpg" },
+    { name: "Fox Squirrel", emoji: "🦊🐿️", rarity: "Uncommon", reward: "6–18", xp: 10, image: "assets/fox_squirrel.jpg" },
+    { name: "Striped Squirrel", emoji: "🦝🐿️", rarity: "Uncommon", reward: "7–16", xp: 10, image: "assets/striped_squirrel.jpg" },
+    { name: "Pine Squirrel", emoji: "🌲🐿️", rarity: "Uncommon", reward: "5–14", xp: 10, image: "assets/pine_squirrel.jpg" },
+    { name: "Marsh Squirrel", emoji: "🌿🐿️", rarity: "Uncommon", reward: "6–15", xp: 10, image: "assets/marsh_squirrel.jpg" },
+    { name: "Cinnamon Squirrel", emoji: "🟤🐿️", rarity: "Uncommon", reward: "7–17", xp: 10, image: "assets/cinnimon_Squirrel.jpg" },
     // Rare
-    { name: "Flying Squirrel", emoji: "🪂🐿️", rarity: "Rare", reward: "15–40", xp: 20 },
-    { name: "Albino Squirrel", emoji: "👻🐿️", rarity: "Rare", reward: "20–50", xp: 20 },
-    { name: "Giant Squirrel", emoji: "💪🐿️", rarity: "Rare", reward: "25–60", xp: 20 },
-    { name: "Arctic Squirrel", emoji: "❄️🐿️", rarity: "Rare", reward: "18–45", xp: 20 },
-    { name: "Clockwork Squirrel", emoji: "⚙️🐿️", rarity: "Rare", reward: "22–55", xp: 20 },
-    { name: "Jungle Squirrel", emoji: "🌴🐿️", rarity: "Rare", reward: "20–48", xp: 20 },
+    { name: "Flying Squirrel", emoji: "🪂🐿️", rarity: "Rare", reward: "15–40", xp: 20, image: "assets/flying_squirrel.jpg" },
+    { name: "Albino Squirrel", emoji: "👻🐿️", rarity: "Rare", reward: "20–50", xp: 20, image: "assets/albino_squirrel.jpg" },
+    { name: "Giant Squirrel", emoji: "💪🐿️", rarity: "Rare", reward: "25–60", xp: 20, image: "assets/giant_squirrel.jpg" },
+    { name: "Arctic Squirrel", emoji: "❄️🐿️", rarity: "Rare", reward: "18–45", xp: 20, image: "assets/artctic_squirrel.jpg" },
+    { name: "Clockwork Squirrel", emoji: "⚙️🐿️", rarity: "Rare", reward: "22–55", xp: 20, image: "assets/clockwork_squirrel.jpg" },
+    { name: "Jungle Squirrel", emoji: "🌴🐿️", rarity: "Rare", reward: "20–48", xp: 20, image: "assets/jungle_squirrel.jpg" },
     // Epic
-    { name: "Crystal Squirrel", emoji: "💎🐿️", rarity: "Epic", reward: "50–120", xp: 40 },
-    { name: "Shadow Squirrel", emoji: "🌑🐿️", rarity: "Epic", reward: "60–150", xp: 40 },
-    { name: "Phoenix Squirrel", emoji: "🔥🐿️", rarity: "Epic", reward: "55–130", xp: 40 },
-    { name: "Storm Squirrel", emoji: "⛈️🐿️", rarity: "Epic", reward: "65–140", xp: 40 },
+    { name: "Crystal Squirrel", emoji: "💎🐿️", rarity: "Epic", reward: "50–120", xp: 40, image: "assets/crystal_squirrel.jpg" },
+    { name: "Shadow Squirrel", emoji: "🌑🐿️", rarity: "Epic", reward: "60–150", xp: 40, image: "assets/shadow_squirrel.jpg" },
+    { name: "Phoenix Squirrel", emoji: "🔥🐿️", rarity: "Epic", reward: "55–130", xp: 40, image: "assets/pheonix_squirrel.jpg" },
+    { name: "Storm Squirrel", emoji: "⛈️🐿️", rarity: "Epic", reward: "65–140", xp: 40, image: "assets/storm_squirrel.jpg" },
     // Legendary
-    { name: "Golden Squirrel", emoji: "👑🐿️", rarity: "Legendary", reward: "150–400", xp: 80 },
-    { name: "Cosmic Squirrel", emoji: "🌌🐿️", rarity: "Legendary", reward: "200–500", xp: 80 },
-    { name: "Void Squirrel", emoji: "🕳️🐿️", rarity: "Legendary", reward: "180–450", xp: 80 },
+    { name: "Golden Squirrel", emoji: "👑🐿️", rarity: "Legendary", reward: "150–400", xp: 80, image: "assets/golden_squirrel.jpg" },
+    { name: "Cosmic Squirrel", emoji: "🌌🐿️", rarity: "Legendary", reward: "200–500", xp: 80, image: "assets/cosmic_squirrel.jpg" },
+    { name: "Void Squirrel", emoji: "🕳️🐿️", rarity: "Legendary", reward: "180–450", xp: 80, image: "assets/void_squirrel.jpg" },
     // Mythic
-    { name: "Mythic Nutcracker", emoji: "⚡🐿️", rarity: "Mythic", reward: "500–1,200", xp: 200 },
-    { name: "Celestial Squirrel", emoji: "✨🐿️", rarity: "Mythic", reward: "600–1,500", xp: 200 },
+    { name: "Mythic Nutcracker", emoji: "⚡🐿️", rarity: "Mythic", reward: "500–1,200", xp: 200, image: "assets/mythic_nutcracker.jpg" },
+    { name: "Celestial Squirrel", emoji: "✨🐿️", rarity: "Mythic", reward: "600–1,500", xp: 200, image: "assets/celestial_squirrel.jpg" },
   ];
 
   // ─── Render Squirrel Grid ───
@@ -1016,8 +1022,8 @@
     const filtered = filter === 'All' ? squirrels : squirrels.filter(s => s.rarity === filter);
     grid.innerHTML = filtered.map(s => `
       <div class="squirrel-card" data-rarity="${s.rarity}">
-        <span class="emoji">${s.emoji}</span>
-        <div class="name">${s.name}</div>
+        <img src="${s.image}" alt="${s.name}" loading="lazy">
+        <div class="name">${s.emoji} ${s.name}</div>
         <span class="rarity-badge">${s.rarity}</span>
         <div class="stats">
           <span>🌰 ${s.reward}</span>
