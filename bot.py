@@ -221,6 +221,8 @@ class MenuButton(discord.ui.Button):
         self.action = action
 
     async def callback(self, interaction: discord.Interaction):
+        # Carry the current page context so response messages keep the same menu
+        interaction._menu_page = self.view.current_page
         handlers = {
             "catch": do_catch, "bag": do_bag, "balance": do_balance,
             "profile": do_profile, "shop": do_shop, "buffs": do_buffs,
@@ -232,20 +234,6 @@ class MenuButton(discord.ui.Button):
         if handler:
             await handler(interaction)
 
-
-class BackButton(discord.ui.Button):
-    """Navigates back to the previous menu page by editing the message."""
-    def __init__(self, *, page, prev_page):
-        super().__init__(
-            label="Back", emoji="◀️", style=discord.ButtonStyle.secondary,
-            custom_id=f"{page}:back:{prev_page}", row=2,
-        )
-        self.target = prev_page
-
-    async def callback(self, interaction: discord.Interaction):
-        embed = await get_page_embed(self.target, interaction.user)
-        view = MenuView(page=self.target)
-        await interaction.response.edit_message(embed=embed, view=view)
 
 
 class PageSelect(discord.ui.Select):
@@ -270,16 +258,15 @@ class PageSelect(discord.ui.Select):
             await interaction.response.defer()
             return
         embed = await get_page_embed(selected, interaction.user)
-        view = MenuView(page=selected, prev_page=self.current_page)
+        view = MenuView(page=selected)
         await interaction.response.edit_message(embed=embed, view=view)
 
 
 class MenuView(discord.ui.View):
     """Dynamic menu view that shows different buttons based on the current page."""
-    def __init__(self, page="play", prev_page=None):
+    def __init__(self, page="play"):
         super().__init__(timeout=None)
         self.current_page = page
-        self.prev_page = prev_page
 
         # Row 0: Page selector (always on top)
         self.add_item(PageSelect(current_page=page, row=0))
@@ -313,18 +300,17 @@ class MenuView(discord.ui.View):
             self.add_item(MenuButton(label="Help", emoji="❓", style=discord.ButtonStyle.primary,
                                      action="help", custom_id="info:help", row=1))
 
-        # Row 2: Back button (if navigated from another page)
-        if prev_page is not None:
-            self.add_item(BackButton(page=page, prev_page=prev_page))
 
 
 async def _send(ctx_or_interaction, embed, view=None, ephemeral=False):
     """Send an embed from either a command context or interaction."""
-    v = view or MenuView()
+    if view is None:
+        page = getattr(ctx_or_interaction, '_menu_page', 'play')
+        view = MenuView(page=page)
     if isinstance(ctx_or_interaction, discord.Interaction):
-        await ctx_or_interaction.response.send_message(embed=embed, view=v, ephemeral=ephemeral)
+        await ctx_or_interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
     else:
-        await ctx_or_interaction.send(embed=embed, view=v)
+        await ctx_or_interaction.send(embed=embed, view=view)
 
 
 async def do_catch(ctx_or_interaction):
@@ -432,7 +418,8 @@ async def do_catch(ctx_or_interaction):
         embed.add_field(name="🎉 LEVEL UP!", value=f"You are now **Level {player['level']}**!", inline=False)
 
     await db.update_player(user_id, player)
-    await msg.edit(content=None, embed=embed, view=MenuView())
+    page = getattr(ctx_or_interaction, '_menu_page', 'play')
+    await msg.edit(content=None, embed=embed, view=MenuView(page=page))
 
 
 async def do_bag(ctx_or_interaction):
@@ -901,12 +888,9 @@ async def before_auto_catch():
 @bot.event
 async def on_ready():
     await db.init_db(DATABASE_URL)
-    # Register persistent views for all page/back combinations
+    # Register persistent views for each page
     for page in MENU_PAGES:
-        bot.add_view(MenuView(page=page))  # no back button, select on row 1
-        for prev in MENU_PAGES:
-            if prev != page:
-                bot.add_view(MenuView(page=page, prev_page=prev))  # back on row 1, select on row 2
+        bot.add_view(MenuView(page=page))
     if not auto_catch_tick.is_running():
         auto_catch_tick.start()
     print(f"🐿️ Squirrel Catcher is online as {bot.user}!")
