@@ -5,6 +5,7 @@ Uses asyncpg with PostgreSQL for persistent player data storage.
 
 import json
 import asyncpg
+from datetime import datetime, timezone, timedelta
 
 pool: asyncpg.Pool | None = None
 
@@ -19,6 +20,9 @@ DEFAULT_PLAYER = {
     "level": 1,
     "xp": 0,
     "last_daily": None,
+    "trap_tier": 0,
+    "junk_resist_tier": 0,
+    "acorn_magnet_tier": 0,
 }
 
 
@@ -42,6 +46,24 @@ async def init_db(database_url: str):
                 catches JSONB DEFAULT '{}'
             )
         """)
+        # Add upgrade columns if they don't exist
+        for col in ("trap_tier", "junk_resist_tier", "acorn_magnet_tier"):
+            await conn.execute(f"""
+                ALTER TABLE players ADD COLUMN IF NOT EXISTS {col} INTEGER DEFAULT 0
+            """)
+        # Create player_buffs table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_buffs (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                buff_type TEXT NOT NULL,
+                charges_left INTEGER,
+                expires_at TIMESTAMPTZ,
+                channel_id TEXT,
+                last_triggered TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
 
 
 def _row_to_dict(row: asyncpg.Record) -> dict:
@@ -60,6 +82,9 @@ def _row_to_dict(row: asyncpg.Record) -> dict:
         "xp": row["xp"],
         "last_daily": row["last_daily"].isoformat() if row["last_daily"] else None,
         "catches": catches,
+        "trap_tier": row["trap_tier"],
+        "junk_resist_tier": row["junk_resist_tier"],
+        "acorn_magnet_tier": row["acorn_magnet_tier"],
     }
 
 
@@ -77,7 +102,6 @@ async def update_player(user_id: str, player: dict):
     """Upsert a player row from a player dict."""
     last_daily = None
     if player.get("last_daily"):
-        from datetime import datetime, timezone
         ld = player["last_daily"]
         if isinstance(ld, str):
             dt = datetime.fromisoformat(ld)
@@ -93,8 +117,9 @@ async def update_player(user_id: str, player: dict):
         await conn.execute(
             """
             INSERT INTO players (user_id, acorns, silver_acorns, emerald_acorns, golden_acorns,
-                                 total_catches, junk_catches, level, xp, last_daily, catches)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+                                 total_catches, junk_catches, level, xp, last_daily, catches,
+                                 trap_tier, junk_resist_tier, acorn_magnet_tier)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13, $14)
             ON CONFLICT (user_id) DO UPDATE SET
                 acorns = EXCLUDED.acorns,
                 silver_acorns = EXCLUDED.silver_acorns,
@@ -105,7 +130,10 @@ async def update_player(user_id: str, player: dict):
                 level = EXCLUDED.level,
                 xp = EXCLUDED.xp,
                 last_daily = EXCLUDED.last_daily,
-                catches = EXCLUDED.catches
+                catches = EXCLUDED.catches,
+                trap_tier = EXCLUDED.trap_tier,
+                junk_resist_tier = EXCLUDED.junk_resist_tier,
+                acorn_magnet_tier = EXCLUDED.acorn_magnet_tier
             """,
             user_id,
             player.get("acorns", 0),
@@ -118,6 +146,9 @@ async def update_player(user_id: str, player: dict):
             player.get("xp", 0),
             last_daily,
             catches_json,
+            player.get("trap_tier", 0),
+            player.get("junk_resist_tier", 0),
+            player.get("acorn_magnet_tier", 0),
         )
 
 
@@ -126,6 +157,85 @@ async def load_all_players() -> dict:
     async with pool.acquire() as conn:
         rows = await conn.fetch("SELECT * FROM players")
     return {row["user_id"]: _row_to_dict(row) for row in rows}
+
+
+async def add_buff(user_id: str, buff_type: str, charges: int | None = None,
+                   expires_at: datetime | None = None, channel_id: str | None = None) -> int:
+    """Add a buff to a player. Returns the buff id."""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO player_buffs (user_id, buff_type, charges_left, expires_at, channel_id)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id
+            """,
+            user_id, buff_type, charges, expires_at, channel_id,
+        )
+        return row["id"]
+
+
+async def get_active_buffs(user_id: str) -> list[dict]:
+    """Get all active buffs for a player (charges > 0 or not yet expired)."""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT * FROM player_buffs
+            WHERE user_id = $1
+              AND (charges_left IS NULL OR charges_left > 0)
+              AND (expires_at IS NULL OR expires_at > NOW())
+            ORDER BY created_at
+            """,
+            user_id,
+        )
+    return [dict(r) for r in rows]
+
+
+async def consume_buff_charge(buff_id: int):
+    """Decrement charges_left for a buff. Delete if it hits 0."""
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "UPDATE player_buffs SET charges_left = charges_left - 1 WHERE id = $1 RETURNING charges_left",
+            buff_id,
+        )
+        if row and row["charges_left"] <= 0:
+            await conn.execute("DELETE FROM player_buffs WHERE id = $1", buff_id)
+
+
+async def cleanup_expired_buffs():
+    """Delete expired time-based buffs."""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "DELETE FROM player_buffs WHERE expires_at IS NOT NULL AND expires_at <= NOW()"
+        )
+
+
+async def get_auto_catch_buffs() -> list[dict]:
+    """Get all active auto-catch buffs (squirrel_hunter, elite_hunter)."""
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT * FROM player_buffs
+            WHERE buff_type IN ('squirrel_hunter', 'elite_hunter')
+              AND expires_at > NOW()
+            ORDER BY created_at
+            """,
+        )
+    return [dict(r) for r in rows]
+
+
+async def update_buff_last_triggered(buff_id: int):
+    """Update the last_triggered timestamp for an auto-catch buff."""
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE player_buffs SET last_triggered = NOW() WHERE id = $1",
+            buff_id,
+        )
+
+
+async def delete_buff(buff_id: int):
+    """Delete a buff by id."""
+    async with pool.acquire() as conn:
+        await conn.execute("DELETE FROM player_buffs WHERE id = $1", buff_id)
 
 
 async def close_db():

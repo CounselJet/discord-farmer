@@ -4,12 +4,12 @@ Catch squirrels, earn acorns, and become the ultimate squirrel wrangler!
 """
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 import os
 import random
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import db
 
@@ -84,9 +84,43 @@ JUNK_CATCHES = [
     ("a confused frog", "🐸", 3),
 ]
 
+# ─── SHOP DATA ────────────────────────────────────────────────────────────────
+
+SHOP_ITEMS = {
+    "better_trap": {"name": "Better Trap", "emoji": "🪤", "cost": 500, "currency": "acorns",
+                     "description": "-2s catch cooldown", "type": "upgrade", "upgrade_key": "trap_tier"},
+    "squirrel_bait": {"name": "Squirrel Bait", "emoji": "🥜", "cost": 200, "currency": "acorns",
+                       "description": "-5% junk chance (10 catches)", "type": "consumable", "charges": 10},
+    "lucky_acorn": {"name": "Lucky Acorn", "emoji": "🍀", "cost": 1000, "currency": "acorns",
+                     "description": "2x acorn rewards (30 min)", "type": "timed", "duration_minutes": 30},
+    "rare_scent": {"name": "Rare Scent", "emoji": "✨", "cost": 2500, "currency": "acorns",
+                    "description": "+3% Rare+ drop rate (20 catches)", "type": "consumable", "charges": 20},
+    "squirrel_hunter": {"name": "Squirrel Hunter", "emoji": "🏹", "cost": 5000, "currency": "acorns",
+                         "description": "Auto-catch every 30 min (24h)", "type": "auto_catch",
+                         "interval_minutes": 30, "duration_hours": 24},
+    "golden_bait": {"name": "Golden Bait", "emoji": "🥇", "cost": 1, "currency": "silver_acorns",
+                     "description": "-10% junk chance (20 catches)", "type": "consumable", "charges": 20},
+    "elite_hunter": {"name": "Elite Hunter", "emoji": "⚔️", "cost": 5, "currency": "silver_acorns",
+                      "description": "Auto-catch every 15 min (24h)", "type": "auto_catch",
+                      "interval_minutes": 15, "duration_hours": 24},
+}
+
+UPGRADE_TIERS = {
+    "trap_tier": {"name": "Trap Speed", "max": 3,
+                   "tiers": [{"cost": 500, "label": "8s cooldown"}, {"cost": 2000, "label": "6s cooldown"}, {"cost": 10000, "label": "5s cooldown"}]},
+    "junk_resist_tier": {"name": "Junk Resistance", "max": 3,
+                          "tiers": [{"cost": 1000, "label": "-3% junk"}, {"cost": 5000, "label": "-5% junk"}, {"cost": 20000, "label": "-8% junk"}]},
+    "acorn_magnet_tier": {"name": "Acorn Magnet", "max": 3,
+                           "tiers": [{"cost": 1500, "label": "+5% acorns"}, {"cost": 7500, "label": "+10% acorns"}, {"cost": 30000, "label": "+15% acorns"}]},
+}
+
+TRAP_COOLDOWNS = [10, 8, 6, 5]  # index = trap_tier
+JUNK_RESIST_BONUSES = [0, 3, 5, 8]  # index = junk_resist_tier
+ACORN_MAGNET_BONUSES = [0, 5, 10, 15]  # index = acorn_magnet_tier
+
 # ─── COOLDOWNS ────────────────────────────────────────────────────────────────
 
-CATCH_COOLDOWN = 10  # seconds between catches
+CATCH_COOLDOWN = 10  # base seconds between catches
 cooldowns: dict[int, datetime] = {}
 
 # ─── LEVELING ─────────────────────────────────────────────────────────────────
@@ -104,22 +138,28 @@ def check_level_up(player: dict) -> bool:
 
 # ─── CATCH LOGIC ──────────────────────────────────────────────────────────────
 
-def roll_catch(player_level: int) -> tuple:
-    """Returns either a squirrel tuple or a junk tuple."""
+def roll_catch(player_level: int, junk_resist_tier: int = 0,
+               bait_junk_reduction: int = 0, has_rare_scent: bool = False) -> tuple:
+    """Returns either a squirrel tuple or a junk tuple.
+    junk_resist_tier: permanent junk reduction tier (0-3)
+    bait_junk_reduction: temporary junk % reduction from bait buffs
+    has_rare_scent: whether rare_scent buff is active
+    """
     # 30% chance of junk, decreasing slightly with level
-    junk_chance = max(15, 30 - player_level)
+    junk_chance = max(5, 30 - player_level - JUNK_RESIST_BONUSES[junk_resist_tier] - bait_junk_reduction)
     if random.randint(1, 100) <= junk_chance:
         return ("junk", random.choice(JUNK_CATCHES))
 
     # Weighted random squirrel selection
     # Higher level = slightly better luck
     level_bonus = min(player_level * 0.5, 10)
+    rare_bonus = 3 if has_rare_scent else 0
     weights = []
     for sq in SQUIRRELS:
         w = sq[5]
         # Boost rare+ squirrels slightly based on level
         if sq[2] in ("Rare", "Epic", "Legendary", "Mythic"):
-            w *= (1 + level_bonus / 100)
+            w *= (1 + (level_bonus + rare_bonus) / 100)
         weights.append(w)
 
     chosen = random.choices(SQUIRRELS, weights=weights, k=1)[0]
@@ -156,6 +196,8 @@ class MenuView(discord.ui.View):
     @discord.ui.select(
         placeholder="More actions...",
         options=[
+            discord.SelectOption(label="Shop", value="shop", emoji="🛒"),
+            discord.SelectOption(label="Active Buffs", value="buffs", emoji="⚡"),
             discord.SelectOption(label="Daily Bonus", value="daily", emoji="🎁"),
             discord.SelectOption(label="Bestiary", value="bestiary", emoji="📖"),
             discord.SelectOption(label="Leaderboard", value="leaderboard", emoji="🏆"),
@@ -166,7 +208,11 @@ class MenuView(discord.ui.View):
     )
     async def menu_select(self, interaction: discord.Interaction, select: discord.ui.Select):
         choice = select.values[0]
-        if choice == "daily":
+        if choice == "shop":
+            await do_shop(interaction)
+        elif choice == "buffs":
+            await do_buffs(interaction)
+        elif choice == "daily":
             await do_daily(interaction)
         elif choice == "bestiary":
             await do_bestiary(interaction)
@@ -192,7 +238,10 @@ async def do_catch(ctx_or_interaction):
     user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
     user_id = str(user.id)
 
-    # Cooldown check
+    player = await db.get_player(user_id)
+
+    # Cooldown check (reduced by trap_tier)
+    cd_seconds = TRAP_COOLDOWNS[player.get("trap_tier", 0)]
     now = datetime.now()
     if user_id in cooldowns:
         diff = (cooldowns[user_id] - now).total_seconds()
@@ -204,8 +253,29 @@ async def do_catch(ctx_or_interaction):
                 await ctx_or_interaction.send(msg)
             return
 
-    cooldowns[user_id] = now + timedelta(seconds=CATCH_COOLDOWN)
-    player = await db.get_player(user_id)
+    cooldowns[user_id] = now + timedelta(seconds=cd_seconds)
+
+    # Gather active buffs
+    active_buffs = await db.get_active_buffs(user_id)
+    bait_junk_reduction = 0
+    bait_buff_id = None
+    has_rare_scent = False
+    rare_scent_buff_id = None
+    has_lucky_acorn = False
+
+    for buff in active_buffs:
+        bt = buff["buff_type"]
+        if bt == "squirrel_bait":
+            bait_junk_reduction = 5
+            bait_buff_id = buff["id"]
+        elif bt == "golden_bait":
+            bait_junk_reduction = 10
+            bait_buff_id = buff["id"]
+        elif bt == "rare_scent":
+            has_rare_scent = True
+            rare_scent_buff_id = buff["id"]
+        elif bt == "lucky_acorn":
+            has_lucky_acorn = True
 
     # Suspense message
     if is_interaction:
@@ -215,7 +285,14 @@ async def do_catch(ctx_or_interaction):
         msg = await ctx_or_interaction.send("🪤 Setting your trap in the forest...")
     await asyncio.sleep(1.5)
 
-    result = roll_catch(player["level"])
+    result = roll_catch(player["level"], player.get("junk_resist_tier", 0),
+                        bait_junk_reduction, has_rare_scent)
+
+    # Consume charge-based buffs that were used
+    if bait_buff_id is not None:
+        await db.consume_buff_charge(bait_buff_id)
+    if rare_scent_buff_id is not None:
+        await db.consume_buff_charge(rare_scent_buff_id)
 
     if result[0] == "junk":
         _, (junk_name, junk_emoji, junk_acorns) = result
@@ -232,6 +309,12 @@ async def do_catch(ctx_or_interaction):
         _, squirrel, acorns = result
         sq_name, sq_emoji, sq_rarity, _, _, _ = squirrel
 
+        # Apply acorn bonuses
+        magnet_bonus = ACORN_MAGNET_BONUSES[player.get("acorn_magnet_tier", 0)]
+        acorns = int(acorns * (1 + magnet_bonus / 100))
+        if has_lucky_acorn:
+            acorns *= 2
+
         player["acorns"] += acorns
         player["total_catches"] += 1
         player["catches"][sq_name] = player["catches"].get(sq_name, 0) + 1
@@ -245,6 +328,8 @@ async def do_catch(ctx_or_interaction):
             color=RARITY_COLORS.get(sq_rarity, 0x808080),
         )
 
+        if has_lucky_acorn:
+            embed.description += " (2x Lucky Acorn!)"
         if sq_rarity in ("Epic", "Legendary", "Mythic"):
             embed.set_footer(text=f"🎉 Wow! A {sq_rarity} catch!")
 
@@ -432,6 +517,9 @@ async def do_help(ctx_or_interaction):
         (f"`{PREFIX}bag`", "View your caught squirrels"),
         (f"`{PREFIX}balance`", "Check your acorn stash"),
         (f"`{PREFIX}profile`", "View your full profile"),
+        (f"`{PREFIX}shop`", "Browse items and upgrades"),
+        (f"`{PREFIX}buy <item>`", "Purchase an item or upgrade"),
+        (f"`{PREFIX}buffs`", "View your active buffs and upgrades"),
         (f"`{PREFIX}exchange <amount>`", "Convert 100 acorns → 1 silver acorn, etc."),
         (f"`{PREFIX}leaderboard`", "See the top squirrel catchers"),
         (f"`{PREFIX}bestiary`", "View all discoverable squirrels"),
@@ -444,11 +532,283 @@ async def do_help(ctx_or_interaction):
     await _send(ctx_or_interaction, embed)
 
 
+async def do_shop(ctx_or_interaction):
+    is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
+    user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
+    player = await db.get_player(str(user.id))
+
+    embed = discord.Embed(title="🛒 Squirrel Shop", color=0xE67E22)
+
+    # Items & Buffs section
+    item_lines = []
+    for key, item in SHOP_ITEMS.items():
+        if item["type"] == "upgrade":
+            continue
+        currency_emoji = CURRENCIES.get(item["currency"], "🌰")
+        item_lines.append(f"{item['emoji']} **{item['name']}** — {item['cost']:,} {currency_emoji}\n  _{item['description']}_\n  `!sq buy {key}`")
+    embed.add_field(name="Items & Buffs", value="\n".join(item_lines), inline=False)
+
+    # Permanent Upgrades section
+    upgrade_lines = []
+    for key, upgrade in UPGRADE_TIERS.items():
+        current_tier = player.get(key, 0)
+        tier_display = []
+        for i, tier in enumerate(upgrade["tiers"]):
+            if i < current_tier:
+                tier_display.append(f"  ~~Tier {i+1}: {tier['label']} ({tier['cost']:,} 🌰)~~ ✅")
+            elif i == current_tier:
+                tier_display.append(f"  **Tier {i+1}: {tier['label']} ({tier['cost']:,} 🌰)** ← Next")
+            else:
+                tier_display.append(f"  Tier {i+1}: {tier['label']} ({tier['cost']:,} 🌰)")
+        if current_tier >= upgrade["max"]:
+            upgrade_lines.append(f"🪤 **{upgrade['name']}** — MAX ✅")
+        else:
+            upgrade_lines.append(f"🪤 **{upgrade['name']}**\n" + "\n".join(tier_display))
+    embed.add_field(name="Permanent Upgrades", value="\n".join(upgrade_lines), inline=False)
+
+    embed.set_footer(text=f"Use !sq buy <item> to purchase")
+    await _send(ctx_or_interaction, embed)
+
+
+async def do_buy(ctx_or_interaction, item_key: str):
+    is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
+    user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
+    user_id = str(user.id)
+    player = await db.get_player(user_id)
+
+    # Check if it's an upgrade tier purchase
+    if item_key in UPGRADE_TIERS:
+        upgrade = UPGRADE_TIERS[item_key]
+        current_tier = player.get(item_key, 0)
+        if current_tier >= upgrade["max"]:
+            msg = f"❌ **{upgrade['name']}** is already at max tier!"
+            if is_interaction:
+                await ctx_or_interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await ctx_or_interaction.send(msg)
+            return
+        tier_cost = upgrade["tiers"][current_tier]["cost"]
+        if player["acorns"] < tier_cost:
+            msg = f"❌ You need **{tier_cost:,}** 🌰 for {upgrade['name']} Tier {current_tier + 1}! (You have {player['acorns']:,})"
+            if is_interaction:
+                await ctx_or_interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await ctx_or_interaction.send(msg)
+            return
+        player["acorns"] -= tier_cost
+        player[item_key] = current_tier + 1
+        await db.update_player(user_id, player)
+        tier_label = upgrade["tiers"][current_tier]["label"]
+        embed = discord.Embed(
+            title=f"🪤 Upgraded {upgrade['name']}!",
+            description=f"**Tier {current_tier + 1}:** {tier_label}\nCost: {tier_cost:,} 🌰",
+            color=0x2ECC71,
+        )
+        await _send(ctx_or_interaction, embed)
+        return
+
+    # Check shop items
+    if item_key not in SHOP_ITEMS:
+        msg = f"❌ Unknown item: **{item_key}**. Use `!sq shop` to see available items."
+        if is_interaction:
+            await ctx_or_interaction.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx_or_interaction.send(msg)
+        return
+
+    item = SHOP_ITEMS[item_key]
+
+    # For upgrade-type shop items, redirect to upgrade logic
+    if item["type"] == "upgrade":
+        await do_buy(ctx_or_interaction, item["upgrade_key"])
+        return
+
+    # Check currency
+    currency = item["currency"]
+    cost = item["cost"]
+    if player[currency] < cost:
+        currency_emoji = CURRENCIES.get(currency, "🌰")
+        msg = f"❌ You need **{cost:,}** {currency_emoji}! (You have {player[currency]:,})"
+        if is_interaction:
+            await ctx_or_interaction.response.send_message(msg, ephemeral=True)
+        else:
+            await ctx_or_interaction.send(msg)
+        return
+
+    # Deduct cost
+    player[currency] -= cost
+    await db.update_player(user_id, player)
+
+    # Create buff
+    channel_id = str(ctx_or_interaction.channel_id) if hasattr(ctx_or_interaction, "channel_id") else None
+    if not channel_id and hasattr(ctx_or_interaction, "channel"):
+        channel_id = str(ctx_or_interaction.channel.id)
+
+    if item["type"] == "consumable":
+        await db.add_buff(user_id, item_key, charges=item["charges"])
+    elif item["type"] == "timed":
+        expires = datetime.now(timezone.utc) + timedelta(minutes=item["duration_minutes"])
+        await db.add_buff(user_id, item_key, expires_at=expires)
+    elif item["type"] == "auto_catch":
+        expires = datetime.now(timezone.utc) + timedelta(hours=item["duration_hours"])
+        await db.add_buff(user_id, item_key, expires_at=expires, channel_id=channel_id)
+
+    currency_emoji = CURRENCIES.get(currency, "🌰")
+    embed = discord.Embed(
+        title=f"{item['emoji']} Purchased {item['name']}!",
+        description=f"{item['description']}\nCost: {cost:,} {currency_emoji}",
+        color=0x2ECC71,
+    )
+    await _send(ctx_or_interaction, embed)
+
+
+async def do_buffs(ctx_or_interaction):
+    is_interaction = isinstance(ctx_or_interaction, discord.Interaction)
+    user = ctx_or_interaction.user if is_interaction else ctx_or_interaction.author
+    user_id = str(user.id)
+    player = await db.get_player(user_id)
+    active_buffs = await db.get_active_buffs(user_id)
+
+    embed = discord.Embed(title=f"⚡ {user.display_name}'s Active Buffs", color=0x9B59B6)
+
+    # Active consumable/timed buffs
+    if active_buffs:
+        buff_lines = []
+        for buff in active_buffs:
+            item = SHOP_ITEMS.get(buff["buff_type"])
+            if not item:
+                continue
+            emoji = item["emoji"]
+            name = item["name"]
+            if buff["charges_left"] is not None:
+                buff_lines.append(f"{emoji} **{name}** — {buff['charges_left']} charges left")
+            elif buff["expires_at"]:
+                remaining = buff["expires_at"] - datetime.now(timezone.utc)
+                if remaining.total_seconds() > 0:
+                    mins = int(remaining.total_seconds() // 60)
+                    hrs = mins // 60
+                    mins = mins % 60
+                    time_str = f"{hrs}h {mins}m" if hrs > 0 else f"{mins}m"
+                    buff_lines.append(f"{emoji} **{name}** — {time_str} remaining")
+        if buff_lines:
+            embed.add_field(name="Active Buffs", value="\n".join(buff_lines), inline=False)
+        else:
+            embed.add_field(name="Active Buffs", value="None", inline=False)
+    else:
+        embed.add_field(name="Active Buffs", value="No active buffs. Visit `!sq shop` to buy some!", inline=False)
+
+    # Permanent upgrades
+    upgrade_lines = []
+    for key, upgrade in UPGRADE_TIERS.items():
+        current = player.get(key, 0)
+        if current > 0:
+            label = upgrade["tiers"][current - 1]["label"]
+            upgrade_lines.append(f"🪤 **{upgrade['name']}** Tier {current}: {label}")
+    if upgrade_lines:
+        embed.add_field(name="Permanent Upgrades", value="\n".join(upgrade_lines), inline=False)
+    else:
+        embed.add_field(name="Permanent Upgrades", value="None yet. Visit `!sq shop`!", inline=False)
+
+    await _send(ctx_or_interaction, embed)
+
+
+# ─── AUTO-CATCH BACKGROUND TASK ──────────────────────────────────────────────
+
+@tasks.loop(minutes=1)
+async def auto_catch_tick():
+    """Process auto-catch buffs every minute."""
+    try:
+        auto_buffs = await db.get_auto_catch_buffs()
+    except Exception:
+        return
+
+    now = datetime.now(timezone.utc)
+
+    for buff in auto_buffs:
+        item = SHOP_ITEMS.get(buff["buff_type"])
+        if not item:
+            continue
+
+        interval = timedelta(minutes=item["interval_minutes"])
+        last = buff.get("last_triggered")
+
+        if last is not None and (now - last) < interval:
+            continue
+
+        # Time to auto-catch
+        user_id = buff["user_id"]
+        player = await db.get_player(user_id)
+
+        result = roll_catch(player["level"], player.get("junk_resist_tier", 0))
+
+        if result[0] == "junk":
+            _, (junk_name, junk_emoji, junk_acorns) = result
+            player["junk_catches"] += 1
+            player["acorns"] += junk_acorns
+            player["xp"] += 1
+        else:
+            _, squirrel, acorns = result
+            sq_name, sq_emoji, sq_rarity, _, _, _ = squirrel
+            magnet_bonus = ACORN_MAGNET_BONUSES[player.get("acorn_magnet_tier", 0)]
+            acorns = int(acorns * (1 + magnet_bonus / 100))
+            player["acorns"] += acorns
+            player["total_catches"] += 1
+            player["catches"][sq_name] = player["catches"].get(sq_name, 0) + 1
+            xp_gain = {"Common": 5, "Uncommon": 10, "Rare": 20, "Epic": 40, "Legendary": 80, "Mythic": 200}
+            player["xp"] += xp_gain.get(sq_rarity, 5)
+
+        check_level_up(player)
+        await db.update_player(user_id, player)
+        await db.update_buff_last_triggered(buff["id"])
+
+    # Clean up expired buffs and send summary messages
+    await _check_expired_auto_catch()
+    await db.cleanup_expired_buffs()
+
+
+async def _check_expired_auto_catch():
+    """Check for auto-catch buffs that just expired and send summary."""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT * FROM player_buffs
+                WHERE buff_type IN ('squirrel_hunter', 'elite_hunter')
+                  AND expires_at IS NOT NULL AND expires_at <= NOW()
+                  AND channel_id IS NOT NULL
+                """
+            )
+        for row in rows:
+            channel_id = row["channel_id"]
+            user_id = row["user_id"]
+            try:
+                channel = bot.get_channel(int(channel_id))
+                if channel:
+                    item = SHOP_ITEMS.get(row["buff_type"], {})
+                    embed = discord.Embed(
+                        title=f"{item.get('emoji', '🏹')} Auto-Catch Complete!",
+                        description=f"<@{user_id}>'s **{item.get('name', 'Auto-Catch')}** has expired. Check your bag for the results!",
+                        color=0xE67E22,
+                    )
+                    await channel.send(embed=embed)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+@auto_catch_tick.before_loop
+async def before_auto_catch():
+    await bot.wait_until_ready()
+
+
 # ─── BOT EVENTS ───────────────────────────────────────────────────────────────
 
 @bot.event
 async def on_ready():
     await db.init_db(DATABASE_URL)
+    if not auto_catch_tick.is_running():
+        auto_catch_tick.start()
     print(f"🐿️ Squirrel Catcher is online as {bot.user}!")
     print(f"   Prefix: {PREFIX}")
     print(f"   Servers: {len(bot.guilds)}")
@@ -653,6 +1013,24 @@ async def sell_cmd(ctx, *, squirrel_name: str = ""):
 @bot.command(name="daily")
 async def daily_cmd(ctx):
     await do_daily(ctx)
+
+
+@bot.command(name="shop")
+async def shop_cmd(ctx):
+    await do_shop(ctx)
+
+
+@bot.command(name="buy")
+async def buy_cmd(ctx, *, item_name: str = ""):
+    if not item_name:
+        await ctx.send(f"Usage: `{PREFIX}buy <item>` — Use `{PREFIX}shop` to see items.")
+        return
+    await do_buy(ctx, item_name.lower().replace(" ", "_"))
+
+
+@bot.command(name="buffs")
+async def buffs_cmd(ctx):
+    await do_buffs(ctx)
 
 
 @bot.command(name="donate")
