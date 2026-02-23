@@ -1248,6 +1248,11 @@ async def auto_catch_tick():
             player["junk_catches"] += 1
             player["acorns"] += junk_acorns
             player["xp"] += 1
+            embed = discord.Embed(
+                title=f"{junk_emoji} Auto-Catch: {junk_name}",
+                description=f"<@{user_id}>" + (f" +{junk_acorns} 🌰" if junk_acorns else ""),
+                color=0x808080,
+            )
         else:
             _, squirrel, acorns = result
             sq_name, sq_emoji, sq_rarity, _, _, _, _ = squirrel
@@ -1258,10 +1263,26 @@ async def auto_catch_tick():
             player["catches"][sq_name] = player["catches"].get(sq_name, 0) + 1
             xp_gain = {"Common": 5, "Uncommon": 10, "Rare": 20, "Epic": 40, "Legendary": 80, "Mythic": 200}
             player["xp"] += xp_gain.get(sq_rarity, 5)
+            embed = discord.Embed(
+                title=f"{sq_emoji} Auto-Catch: {sq_name}!",
+                description=f"<@{user_id}> {sq_rarity} — +{acorns} 🌰",
+                color=RARITY_COLORS.get(sq_rarity, 0x808080),
+            )
 
-        check_level_up(player)
+        leveled = check_level_up(player)
+        if leveled:
+            embed.add_field(name="🎉 LEVEL UP!", value=f"Now **Level {player['level']}**!", inline=False)
+        embed.set_footer(text=item.get("name", "Auto-Catch"))
+
         await db.update_player(user_id, player)
         await db.update_buff_last_triggered(buff["id"])
+
+        try:
+            channel = bot.get_channel(int(buff["channel_id"]))
+            if channel:
+                await channel.send(embed=embed)
+        except Exception:
+            pass
 
     # Clean up expired buffs and send summary messages
     await _check_expired_auto_catch()
